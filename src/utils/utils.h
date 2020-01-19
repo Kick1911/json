@@ -27,6 +27,12 @@ static char* ignore_space(const char* s){
     return (char*)p - 1;
 }
 
+static char* end_of_string(const char* s){
+    const char* p = s;
+    while( (p = strchr(p + 1, '"')) && p[-1] == '\\' );
+    return (char*)p;
+}
+
 static char* other_end(const char* s, const char* couple){
     const char* p = s;
     int stack = 0;

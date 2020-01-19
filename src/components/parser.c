@@ -12,8 +12,9 @@ h_table_t* json_parse(const char* start, const char* end){
     const char* s = start, *e = end;
 
     {
+        size_t length = 0;
         void* value = NULL;
-        char key[255];
+        char key[255], *ptr;
         s = strchr(s, '"');
         sscanf(s + 1, "%[^\"]", key);
         s += strlen(key);
@@ -21,9 +22,18 @@ h_table_t* json_parse(const char* start, const char* end){
         s = ignore_space(s + 1);
         switch(*s){
             case '{':
-                value = json_parse(s, other_end(s, "{}"));
+                ptr = other_end(s, "{}");
+                value = json_parse(s, ptr);
+                s = ptr + 1;
             break;
             case '"':
+                ptr = end_of_string(s);
+                s++; /* skip openning double quote */
+                length = ptr - s;
+                value = malloc(sizeof(char) * (length + 1));
+                strncpy(value, s, length);
+                strncpy(value + length, "\0", 1);
+                s += length + 1;
             break;
             case '[':
                 value = json_parse(s, other_end(s, "[]"));
@@ -31,13 +41,16 @@ h_table_t* json_parse(const char* start, const char* end){
             case 't':
                 value = malloc(sizeof(unsigned char));
                 memset(value, 1, sizeof(unsigned char));
+                s += strlen("true");
             break;
             case 'f':
                 value = malloc(sizeof(unsigned char));
                 memset(value, 0, sizeof(unsigned char));
+                s += strlen("false");
             break;
             case 'n':
                 value = NULL;
+                s += strlen("null");
             break;
             default:
                 /* Integer and float */
