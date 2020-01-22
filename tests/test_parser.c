@@ -43,6 +43,20 @@ int main(void){
             h_free_table(ht);
         );
 
+        TEST(Integer and null value,
+            char test[] = "{ \"kick\":   19, \"a\" : null \n\n}";
+            long int* value;
+            h_table_t* ht = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+            T_ASSERT(ht);
+            value = h_lookup(ht, "kick");
+            T_ASSERT_NUM(*value, 19);
+            T_ASSERT(!h_lookup(ht, "a"));
+            h_free_key(ht, "kick");
+            h_free_key(ht, "a");
+            free(value);
+            h_free_table(ht);
+        );
+
         TEST(true value,
             char test[] = "{ \"kick\":   true \n\n}";
             unsigned char* value;

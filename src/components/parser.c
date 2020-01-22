@@ -18,7 +18,7 @@ int json_value_parse(const char* s, const char** end, void** value){
         case '{':{
             char* e = other_end(s, "{}");
             v = json_parse(s, e);
-            s = e;
+            s = e + 1;
         }break;
         case '"':{
             char* e = end_of_string(s);
@@ -27,7 +27,7 @@ int json_value_parse(const char* s, const char** end, void** value){
             v = malloc(sizeof(char) * (length + 1));
             strncpy(v, s, length);
             strncpy((char*)v + length, "\0", 1);
-            s = e;
+            s = e + 1;
         }break;
         case '[':{
             int arr_len = 0, i;
@@ -40,7 +40,7 @@ int json_value_parse(const char* s, const char** end, void** value){
                 i++;
             }
             v = (void*)json_arr;
-            s = e;
+            s = e + 1;
             free(arr);
         }break;
         case 't':
@@ -48,19 +48,19 @@ int json_value_parse(const char* s, const char** end, void** value){
             if(strcmp(str, "true")) return 1;
             v = malloc(sizeof(unsigned char));
             memset(v, 1, sizeof(unsigned char));
-            s += strlen(str) - 1;
+            s += strlen(str);
         break;
         case 'f':
             sscanf(s, "%s", str);
             if(strcmp(str, "false")) return 1;
             v = malloc(sizeof(unsigned char));
             memset(v, 0, sizeof(unsigned char));
-            s += strlen(str) - 1;
+            s += strlen(str);
         break;
         case 'n':
             sscanf(s, "%s", str);
-            if(strcmp(str, "false")) return 1;
-            s += strlen(str) - 1;
+            if(strcmp(str, "null")) return 1;
+            s += strlen(str);
             v = NULL;
         break;
         default:{
@@ -75,7 +75,7 @@ int json_value_parse(const char* s, const char** end, void** value){
                 long_int = strtol(s, &p_end, base);
                 memmove(v, &long_int, sizeof(long int));
             }
-            s += strlen(str) - 1;
+            s += strlen(str);
         }
     }
     if(end)
@@ -86,19 +86,19 @@ int json_value_parse(const char* s, const char** end, void** value){
 
 h_table_t* json_parse(const char* start, const char* end){
     void* ht = h_create_table();
-    const char* s = start, *e = end;
+    const char* s = start, *e = end, *value_end = NULL;
 
-    {
+    while( s < e && (s = strchr(s, '"')) ){
+        char key[255] = {0};
         void* value = NULL;
-        char key[255];
-        s = strchr(s, '"');
         sscanf(s + 1, "%[^\"]", key);
         s += strlen(key);
         s = strchr(s, ':');
         s = ignore_space(s + 1);
 
-        json_value_parse(s, NULL, &value);
+        json_value_parse(s, &value_end, &value);
         h_insert(ht, key, value);
+        s = value_end;
     }
     return ht; 
 }
