@@ -48,10 +48,12 @@ static char* other_end(const char* s, const char* couple){
     return (char*)p;
 }
 
+/** TODO: Proper tests on this. This function will fail if it cannot find the end */
 static substring_t* split_str_array(const char* s, const char* e, int* length){
     int i = 0, arr_size = 10;
     const char* p = s;
     substring_t* arr = (substring_t*)calloc(sizeof(substring_t), arr_size);
+    if(!arr) return NULL;
 
     while(++p < e){
         char* start = NULL, *end = NULL;
@@ -95,6 +97,7 @@ static substring_t* split_str_array(const char* s, const char* e, int* length){
             if(i >= arr_size){
                 arr_size += arr_size;
                 arr = (substring_t*)realloc(arr, sizeof(substring_t) * arr_size);
+                if(!arr) return NULL;
             }
         }
     }
@@ -107,17 +110,6 @@ static char* xstrrchr(const char* start, const char* end, char c){
     while( p >= start && *p-- != c );
     if(p[1] != c) return NULL;
     return (char*)p + 1;
-}
-
-static int peel(char** start, char** end, const char* couple){
-    if(*start >= *end) return 1;
-
-    *start = strchr(*start, couple[0]) + 1;
-    if(!*start) return 1;
-
-    *end = xstrrchr(*start, *end, couple[1]);
-    if(!*end) return 1;
-    return 0;
 }
 
 int countchr(const char* s, const char* e, char c){

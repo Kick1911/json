@@ -1,5 +1,6 @@
 ROOT = ..
 include ../project.mk
+include ../Makefile.in
 include ../config.mk
 
 TESTS_C = ${shell find . -name '*.c'}
