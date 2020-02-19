@@ -2,9 +2,35 @@
 #include <utils/json.h>
 #include <hash_table.h>
 #include <malloc.h>
+#include <string.h>
 
 int json_set(json_t* j, const char* key, void* data, json_type_t type){
-    h_insert(j->hash_table, key, pack_json_value(data, type));
+    size_t size = 0;
+    void* value;
+    switch(type){
+        case JSON_FLOAT:
+            size = sizeof(double);
+        break;
+        case JSON_NUMERIC:
+            size = sizeof(long int);
+        break;
+        case JSON_BOOLEAN:
+            size = sizeof(char);
+        break;
+        case JSON_OBJECT:
+            value = data;
+        break;
+        case JSON_STRING:
+            size = sizeof(char) * (strlen((char*)data) + 1);
+        break;
+        default:
+        break;
+    }
+    if(type != JSON_OBJECT && type != JSON_ARRAY){
+        value = malloc(size);
+        memcpy(value, data, size);
+    }
+    h_insert(j->hash_table, key, pack_json_value(value, type));
     return 0;
 }
 
@@ -28,13 +54,6 @@ int json_next(json_iterator_t* iter, char** k, void** v){
     return h_next(hi, k, v);
 }
 
-json_t* json_create(){
-    json_t* j = (json_t*)malloc(sizeof(json_t));
-    j->size = 0;
-    j->hash_table = h_create_table();
-    return j;
-}
-
 static void json_free_cb(void* n){
     json_value_t* v = n;
     switch(v->type){
@@ -53,8 +72,8 @@ static void json_free_cb(void* n){
             json_free(v->data);
         break;
         case JSON_ARRAY:{
-            void** arr = v->data;
             void* ptr;
+            void** arr = v->data;
             while( (ptr = *arr++) )
                 json_free_cb(ptr);
             free(v->data);
@@ -64,7 +83,14 @@ static void json_free_cb(void* n){
     free(v);
 }
 
+json_t* json_create(){
+    json_t* j = (json_t*)malloc(sizeof(json_t));
+    j->size = 0;
+    j->hash_table = h_create_table(json_free_cb);
+    return j;
+}
+
 void json_free(json_t* j){
-    h_free_table(j->hash_table, json_free_cb);
+    h_free_table(j->hash_table);
     free(j);
 }
