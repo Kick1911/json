@@ -20,6 +20,10 @@ int json_set(json_t* j, const char* key, void* data, json_type_t type){
             value = malloc(sizeof(char));
             memset(value, (long int)data, sizeof(char));
         break;
+        case JSON_NULL:
+            value = NULL;
+        break;
+        case JSON_ARRAY:
         case JSON_OBJECT:
             value = data;
         break;

@@ -35,7 +35,11 @@ int main(void){
         json_set(json, "c", (char*)1, JSON_BOOLEAN);
         json_set(json, "b", &b, JSON_NUMERIC);
         json_set(json, "d", &d, JSON_FLOAT);
+        json_set(json, "Kick", NULL, JSON_NULL);
         iter = json_iter(json);
+        json_next(iter, &k, &v);
+        T_ASSERT_STRING(k, "Kick");
+        T_ASSERT(!v);
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "d");
         T_ASSERT_FLOAT(*((double*)v), 3.14);
