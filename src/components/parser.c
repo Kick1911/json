@@ -74,9 +74,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
         case 't':
             sscanf(s, "%s", str);
             if(strcmp(str, "true")) return JSON_PARSE_ERROR;
-            v = malloc(sizeof(unsigned char));
-            if(!v) return JSON_MEMORY_ALLOC_ERROR;
-            memset(v, 1, sizeof(unsigned char));
+            v = (void*)0x1;
             s += strlen(str);
             type = JSON_BOOLEAN;
         break;
@@ -84,9 +82,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
         case 'f':
             sscanf(s, "%s", str);
             if(strcmp(str, "false")) return JSON_PARSE_ERROR;
-            v = malloc(sizeof(unsigned char));
-            if(!v) return JSON_MEMORY_ALLOC_ERROR;
-            memset(v, 0, sizeof(unsigned char));
+            v = (void*)0x0;
             s += strlen(str);
             type = JSON_BOOLEAN;
         break;
@@ -126,7 +122,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
 json_t* json_parse(const char* start, const char* end){
     const char* s = start, *e = end, *value_end = NULL;
     json_t* json = json_create();
-    json_type_t r;
+    json_type_t t;
 
     while( s < e && (s = strchr(s, '"')) ){
         char key[255] = {0};
@@ -136,9 +132,9 @@ json_t* json_parse(const char* start, const char* end){
         s = strchr(s, ':');
         s = ignore_space(s + 1);
 
-        r = json_value_parse(s, &value_end, &value);
+        t = json_value_parse(s, &value_end, &value);
         /* handle error */
-        json_set(json, key, value, r);
+        json_set(json, key, json_value(value, t));
         s = value_end;
     }
     return json; 

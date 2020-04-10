@@ -11,12 +11,12 @@ int main(void){
         void* json2 = json_create();
         double f = 3.14;
         char str[] = "I am Kick";
-        json_set(json2, "a", &f, JSON_FLOAT);
-        json_set(json, "kick", json2, JSON_OBJECT);
+        json_set(json2, "a", json_value(&f, JSON_FLOAT));
+        json_set(json, "kick", json_value(json2, JSON_OBJECT));
         kick = json_get(json, "kick");
         T_ASSERT(kick);
         T_ASSERT_FLOAT(*((double*)json_get(kick, "a")), 3.14);
-        json_set(json, "kick", str, JSON_STRING);
+        json_set(json, "kick", json_value(str, JSON_STRING));
         kick = json_get(json, "kick");
         T_ASSERT(kick);
         T_ASSERT_STRING((char*)kick, "I am Kick");
@@ -31,11 +31,11 @@ int main(void){
         char* k = NULL;
         void* v = NULL;
 
-        json_set(json, "a", (char*)0, JSON_BOOLEAN);
-        json_set(json, "c", (char*)1, JSON_BOOLEAN);
-        json_set(json, "b", &b, JSON_NUMERIC);
-        json_set(json, "d", &d, JSON_FLOAT);
-        json_set(json, "Kick", NULL, JSON_NULL);
+        json_set(json, "a", json_value((char*)0, JSON_BOOLEAN));
+        json_set(json, "c", json_value((char*)1, JSON_BOOLEAN));
+        json_set(json, "b", json_value(&b, JSON_NUMERIC));
+        json_set(json, "d", json_value(&d, JSON_FLOAT));
+        json_set(json, "Kick", json_value(NULL, JSON_NULL));
         iter = json_iter(json);
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "Kick");
@@ -54,6 +54,24 @@ int main(void){
         T_ASSERT(!*((unsigned char*)v));
         T_ASSERT(json_next(iter, &k, &v));
         json_free(json);
+    );
+
+    TEST(JSON array,
+        void* json = json_create();
+        char str[] = "I am Kick";
+        long int a = 65494891;
+        void* arr = json_array();
+        void* arr1;
+        T_ASSERT(arr);
+        json_array_push(arr, json_value(&a, JSON_NUMERIC));
+        json_array_push(arr, json_value(str, JSON_STRING));
+        json_set(json, "a", json_value(arr, JSON_ARRAY));
+        T_ASSERT_NUM(json_array_size(arr), 2);
+        arr1 = json_array_pop(json_get(json, "a"));
+        T_ASSERT(arr1);
+        T_ASSERT_STRING((char*)json_data(arr1), "I am Kick");
+        json_free(json);
+        json_value_free(arr1);
     );
     return 0;
 }

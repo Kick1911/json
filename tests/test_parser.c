@@ -47,7 +47,7 @@ void test_suite(){
         json_free(json);
     );
 
-    TEST(true value,
+    TEST(Boolean true value,
         char test[] = "{ \"kick\":   true \n\n}";
         unsigned char* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
@@ -57,7 +57,7 @@ void test_suite(){
         json_free(json);
     );
 
-    TEST(false value,
+    TEST(Boolean false value,
         char test[] = "{ \"kick\":   false \n\n}";
         unsigned char* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
