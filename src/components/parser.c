@@ -3,44 +3,42 @@
 #include <string.h>
 #include <stdlib.h>
 #include <utils/utils.h>
-#include <utils/json.h>
 #include <hash_table.h>
 #include <json.h>
-
-#define OPEN_BRACKET_PATTERN "%*[^{]"
-#define DOUBLE_QUOTE_PATTERN "%[^\"]"
 
 json_type_t json_value_parse(const char* s, const char** end, void** value){
     char str[255];
     size_t length = 0;
     void* v = NULL;
-    long int long_int = 0, base = 10;
     json_type_t type;
 
     switch(*s){
         case '{':{
             char* e = other_end(s, "{}");
             if(!e) return JSON_PARSE_ERROR;
-            v = json_parse(s, e);
-            s = e + 1;
             type = JSON_OBJECT;
+            v = json_value(json_parse(s, e), type);
+            s = e + 1;
         }break;
 
         case '"':{
+            char* temp;
             char* e = end_of_string(s);
             if(!e) return JSON_PARSE_ERROR;
             s++; /* skip openning double quote */
             length = e - s;
-            v = malloc(sizeof(char) * (length + 1));
-            if(!v) return JSON_MEMORY_ALLOC_ERROR;
-            strncpy(v, s, length);
-            strncpy((char*)v + length, "\0", 1);
+            temp = malloc(sizeof(char) * (length + 1));
+            if(!temp) return JSON_MEMORY_ALLOC_ERROR;
+            strncpy(temp, s, length);
+            strncpy((char*)temp + length, "\0", 1);
             s = e + 1;
             type = JSON_STRING;
+            v = json_value(temp, type);
+            free(temp);
         }break;
 
         case '[':{
-            void** json_arr;
+            json_value_t** json_arr;
             substring_t* arr;
             json_type_t r;
             int arr_len = 0, i;
@@ -48,7 +46,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
             if(!e) return JSON_PARSE_ERROR;
             arr = split_str_array(s, e, &arr_len);
             if(!arr) return JSON_MEMORY_ALLOC_ERROR;
-            json_arr = (void**)malloc(sizeof(void*) * (arr_len + 1));
+            json_arr = json_array(arr_len);
             if(!json_arr) return JSON_MEMORY_ALLOC_ERROR;
 
             i = 0;while( i < arr_len ){
@@ -61,42 +59,37 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
                     default:
                     break;
                 }
-                json_arr[i] = pack_json_value(value, r);
+                json_arr[i] = value;
                 i++;
             }
-            json_arr[arr_len] = NULL;
-            v = (void*)json_arr;
             s = e + 1;
             free(arr);
             type = JSON_ARRAY;
+            v = json_value(json_arr, type);
         }break;
 
         case 't':
             sscanf(s, "%s", str);
             if(strcmp(str, "true")) return JSON_PARSE_ERROR;
-            v = malloc(sizeof(unsigned char));
-            if(!v) return JSON_MEMORY_ALLOC_ERROR;
-            memset(v, 1, sizeof(unsigned char));
             s += strlen(str);
             type = JSON_BOOLEAN;
+            v = json_value((void*)1, type);
         break;
 
         case 'f':
             sscanf(s, "%s", str);
             if(strcmp(str, "false")) return JSON_PARSE_ERROR;
-            v = malloc(sizeof(unsigned char));
-            if(!v) return JSON_MEMORY_ALLOC_ERROR;
-            memset(v, 0, sizeof(unsigned char));
             s += strlen(str);
             type = JSON_BOOLEAN;
+            v = json_value((void*)0, type);
         break;
 
         case 'n':
             sscanf(s, "%s", str);
             if(strcmp(str, "null")) return JSON_PARSE_ERROR;
             s += strlen(str);
-            v = NULL;
             type = JSON_NULL;
+            v = json_value(NULL, type);
         break;
 
         default:{
@@ -104,14 +97,14 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
             /* Integer and float */
             sscanf(s, "%s", str);
             if(strchr(str, '.')){
-                v = realloc(v, sizeof(double));
-                sscanf(s, "%lf", (double*)v);
+                double _double = 0.0;
+                sscanf(s, "%lf", &_double);
                 type = JSON_FLOAT;
+                v = json_value(&_double, type);
             }else{
-                v = malloc(sizeof(long int));
-                long_int = strtol(s, &p_end, base);
-                memmove(v, &long_int, sizeof(long int));
+                long int _long_int = strtol(s, &p_end, 10);
                 type = JSON_NUMERIC;
+                v = json_value(&_long_int, type);
             }
             s += strlen(str);
         }
@@ -126,7 +119,6 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
 json_t* json_parse(const char* start, const char* end){
     const char* s = start, *e = end, *value_end = NULL;
     json_t* json = json_create();
-    json_type_t r;
 
     while( s < e && (s = strchr(s, '"')) ){
         char key[255] = {0};
@@ -136,9 +128,9 @@ json_t* json_parse(const char* start, const char* end){
         s = strchr(s, ':');
         s = ignore_space(s + 1);
 
-        r = json_value_parse(s, &value_end, &value);
+        json_value_parse(s, &value_end, &value);
         /* handle error */
-        json_set(json, key, value, r);
+        json_set(json, key, value);
         s = value_end;
     }
     return json; 

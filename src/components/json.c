@@ -4,8 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 
-int json_set(json_t* j, const char* key, void* data, json_type_t type){
-    size_t size = 0;
+json_value_t* json_value(void* data, json_type_t type){
     void* value;
     switch(type){
         case JSON_FLOAT:
@@ -27,16 +26,19 @@ int json_set(json_t* j, const char* key, void* data, json_type_t type){
         case JSON_OBJECT:
             value = data;
         break;
-        case JSON_STRING:
-            size = sizeof(char) * (strlen((char*)data) + 1);
+        case JSON_STRING:{
+            size_t size = sizeof(char) * (strlen((char*)data) + 1);
             value = malloc(size);
             memcpy(value, data, size);
-        break;
+        }break;
         default:
         break;
     }
-    h_insert(j->hash_table, key, pack_json_value(value, type));
-    return 0;
+    return pack_json_value(value, type);
+}
+
+int json_set(json_t* j, const char* key, json_value_t* v){
+    return h_insert(j->hash_table, key, v);
 }
 
 void* json_get(json_t* j, const char* key){
@@ -46,6 +48,10 @@ void* json_get(json_t* j, const char* key){
 
 void* json_data(json_value_t* v){
     return v->data;
+}
+
+json_type_t json_type(json_value_t* v){
+    return v->type;
 }
 
 json_iterator_t* json_iter(json_t* j){
@@ -71,6 +77,7 @@ static void json_free_cb(void* n){
     switch(v->type){
         case JSON_PARSE_ERROR:
         case JSON_MEMORY_ALLOC_ERROR:
+        case JSON_NULL:
         break;
         case JSON_FLOAT:
         case JSON_NUMERIC:
@@ -78,14 +85,12 @@ static void json_free_cb(void* n){
         case JSON_STRING:
             free(v->data);
         break;
-        case JSON_NULL:
-        break;
         case JSON_OBJECT:
             json_free(v->data);
         break;
         case JSON_ARRAY:{
             void* ptr;
-            void** arr = v->data;
+            json_value_t** arr = v->data;
             while( (ptr = *arr++) )
                 json_free_cb(ptr);
             free(v->data);
@@ -105,4 +110,11 @@ json_t* json_create(){
 void json_free(json_t* j){
     h_free_table(j->hash_table);
     free(j);
+}
+
+json_value_t** json_array(size_t s){
+    json_value_t** a = malloc(sizeof(json_value_t*) * (s + 1));
+    if(!a) return NULL;
+    a[s] = NULL;
+    return a;
 }
