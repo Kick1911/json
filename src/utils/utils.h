@@ -24,6 +24,8 @@ static char* ignore_space(const char* s){
             break;
             case '\t':
             break;
+            case '\n':
+            break;
             default:
             return (char*)p;
         }

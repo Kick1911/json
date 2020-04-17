@@ -1,0 +1,23 @@
+{
+    "root":{
+        "config.mk":
+"
+ROOT ?= .
+SRC_PATH = ${ROOT}/
+COMP_PATH = ${SRC_PATH}/
+DEP_PATH = ${SRC_PATH}/
+UTILS_PATH = ${SRC_PATH}/
+TESTS_PATH = ${ROOT}/
+COMP_C = ${shell find ${COMP_PATH} -name '*.c'}
+UTILS_C = ${shell find ${UTILS_PATH} -name '*.c'}
+TESTS_C = ${shell find ${TESTS_PATH} -name '*.c'}
+COMP_O = ${COMP_C:%.c=%.o}
+UTILS_O = ${UTILS_C:%.c=%.o}
+INCLUDE_PATH = ${ROOT}/
+
+LDFLAGS += -L${ROOT}
+CFLAGS += ${DEBUG} -ansi -pedantic -Wall -Wno-deprecated-declarations -I${SRC_PATH} -I${INCLUDE_PATH}
+
+"
+    }
+}

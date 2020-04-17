@@ -116,6 +116,23 @@ void test_suite(){
         T_ASSERT_NUM(*arr3, 19);
         json_free(json);
     );
+
+    TEST(JSON Files,
+        size_t size;
+        char* str;
+        FILE* f = fopen("./data/example.json", "r");
+        void* json;
+        fseek(f, 0, SEEK_END);
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        str = malloc(sizeof(char) * (size + 1));
+        fread(str, sizeof(char), size, f);
+        str[size] = 0;
+        json = json_parse(str, str + size);
+        json_free(json);
+        free(str);
+        fclose(f);
+    );
 }
 
 int main(void){
