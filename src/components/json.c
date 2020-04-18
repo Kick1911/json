@@ -1,5 +1,6 @@
 #include <json.h>
 #include <utils/json.h>
+#include <utils/essentials.h>
 #include <hash_table.h>
 #include <malloc.h>
 #include <string.h>
@@ -35,6 +36,23 @@ json_value_t* json_value(void* data, json_type_t type){
         break;
     }
     return pack_json_value(value, type);
+}
+
+json_t* json_parse_file(const char* file_path){
+    size_t size = 0;
+    json_t* json = NULL;
+
+    WITH_FILE(fopen(file_path, "r"), f,
+        fseek(f, 0, SEEK_END);
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        WITH(malloc(sizeof(char) * (size + 1)), str,
+            fread(str, sizeof(char), size, f);
+            ((char*)str)[size] = 0;
+            json = json_parse(str, ((char*)str) + size);
+        );
+    );
+    return json;
 }
 
 int json_set(json_t* j, const char* key, json_value_t* v){

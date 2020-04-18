@@ -28,6 +28,7 @@ json_value_t** json_array(size_t);
 json_t* json_create();
 void json_free(json_t*);
 json_t* json_parse(const char* start, const char* end);
+json_t* json_parse_file(const char* file_path);
 json_value_t* json_value(void* data, json_type_t);
 int json_set(json_t* j, const char* key, json_value_t* v);
 void* json_get(json_t* j, const char* key);
