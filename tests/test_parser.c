@@ -118,20 +118,16 @@ void test_suite(){
     );
 
     TEST(JSON Files,
-        size_t size;
-        char* str;
-        FILE* f = fopen("./data/example.json", "r");
-        void* json;
-        fseek(f, 0, SEEK_END);
-        size = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        str = malloc(sizeof(char) * (size + 1));
-        fread(str, sizeof(char), size, f);
-        str[size] = 0;
-        json = json_parse(str, str + size);
+        void* root;
+        void* config_mk;
+        void* json = json_parse_file("./data/example.json");
+        T_ASSERT(json);
+        root = json_get(json, "root");
+        T_ASSERT(root);
+        config_mk = json_get(root, "config.mk");
+        T_ASSERT(config_mk);
+        T_ASSERT_NUM(strlen(config_mk), 481);
         json_free(json);
-        free(str);
-        fclose(f);
     );
 }
 
