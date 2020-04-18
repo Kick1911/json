@@ -11,7 +11,7 @@ void test_suite(){
         long int* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_NUM(*value, 19);
         json_free(json);
     );
@@ -21,7 +21,7 @@ void test_suite(){
         double* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_FLOAT(*value, 3.1411165464);
         json_free(json);
     );
@@ -31,7 +31,7 @@ void test_suite(){
         void* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT(!value);
         json_free(json);
     );
@@ -41,9 +41,9 @@ void test_suite(){
         long int* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_NUM(*value, 19);
-        T_ASSERT(!json_get(json, "a"));
+        T_ASSERT(!json_data(json_get(json, "a")));
         json_free(json);
     );
 
@@ -52,7 +52,7 @@ void test_suite(){
         unsigned char* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_NUM(*value, 1);
         json_free(json);
     );
@@ -62,7 +62,7 @@ void test_suite(){
         unsigned char* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_NUM(*value, 0);
         json_free(json);
     );
@@ -73,8 +73,8 @@ void test_suite(){
         long int* value2;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
-        value2 = json_get(value, "a");
+        value = json_data(json_get(json, "kick"));
+        value2 = json_data(json_get(value, "a"));
         T_ASSERT_NUM(*value2, 11);
         json_free(json);
     );
@@ -84,7 +84,7 @@ void test_suite(){
         char* value;
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         T_ASSERT_STRING(value, "ness \\\" ");
         json_free(json);
     );
@@ -101,15 +101,15 @@ void test_suite(){
         json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
 
         T_ASSERT(json);
-        value = json_get(json, "kick");
+        value = json_data(json_get(json, "kick"));
         arr1 = json_data(value[0]);
         arr2 = json_data(value[1]);
         arr3 = json_data(value[2]);
         T_ASSERT(arr1);
         T_ASSERT(arr2);
         T_ASSERT(arr3);
-        arr1_a = json_get(arr1, "a");
-        arr1_b = json_get(arr1, "b");
+        arr1_a = json_data(json_get(arr1, "a"));
+        arr1_b = json_data(json_get(arr1, "b"));
         T_ASSERT_NUM(*arr1_a, 11);
         T_ASSERT_NUM(*arr1_b, 5);
         T_ASSERT_STRING(arr2, "ness");
@@ -122,9 +122,9 @@ void test_suite(){
         void* config_mk;
         void* json = json_parse_file("./data/example.json");
         T_ASSERT(json);
-        root = json_get(json, "root");
+        root = json_data(json_get(json, "root"));
         T_ASSERT(root);
-        config_mk = json_get(root, "config.mk");
+        config_mk = json_data(json_get(root, "config.mk"));
         T_ASSERT(config_mk);
         T_ASSERT_NUM(strlen(config_mk), 481);
         json_free(json);
