@@ -78,14 +78,11 @@ json_iterator_t* json_iter(json_t* j){
 }
 
 int json_next(json_iterator_t* iter, char** k, void** v){
-    json_value_t* value;
     h_iter_t* hi = iter->h_iter;
     if(h_next(hi, k, v)){
         free(iter);
         return 1;
     }
-    value = *v;
-    *v = value->data;
     return 0;
 }
 
