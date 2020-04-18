@@ -59,9 +59,8 @@ int json_set(json_t* j, const char* key, json_value_t* v){
     return h_insert(j->hash_table, key, v);
 }
 
-void* json_get(json_t* j, const char* key){
-    json_value_t* v = h_lookup(j->hash_table, key);
-    return json_data(v);
+json_value_t* json_get(json_t* j, const char* key){
+    return h_lookup(j->hash_table, key);
 }
 
 void* json_data(json_value_t* v){
