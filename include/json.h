@@ -36,5 +36,6 @@ void* json_data(json_value_t*);
 json_type_t json_type(json_value_t*);
 json_iterator_t* json_iter(json_t*);
 int json_next(json_iterator_t*, char**, void**);
+size_t json_size(json_t*);
 
 #endif

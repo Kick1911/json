@@ -119,14 +119,26 @@ void test_suite(){
 
     TEST(JSON Files,
         void* root;
-        void* config_mk;
+        void* src;
+        void* ptr;
         void* json = json_parse_file("./data/example.json");
         T_ASSERT(json);
+        T_ASSERT_NUM(json_size(json), 1);
         root = json_data(json_get(json, "root"));
         T_ASSERT(root);
-        config_mk = json_data(json_get(root, "config.mk"));
-        T_ASSERT(config_mk);
-        T_ASSERT_NUM(strlen(config_mk), 481);
+        T_ASSERT_NUM(json_size(root), 6);
+        ptr = json_data(json_get(root, "tests"));
+        T_ASSERT(ptr);
+        T_ASSERT_NUM(json_size(ptr), 2);
+        src = json_data(json_get(root, "src"));
+        T_ASSERT(src);
+        T_ASSERT_NUM(json_size(src), 3);
+        ptr = json_data(json_get(src, "components"));
+        T_ASSERT(ptr);
+        T_ASSERT_NUM(json_size(ptr), 0);
+        ptr = json_data(json_get(src, "utils"));
+        T_ASSERT(ptr);
+        T_ASSERT_NUM(json_size(ptr), 2);
         json_free(json);
     );
 }

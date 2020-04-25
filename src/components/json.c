@@ -63,6 +63,10 @@ json_value_t* json_get(json_t* j, const char* key){
     return h_lookup(j->hash_table, key);
 }
 
+size_t json_size(json_t* j){
+    return h_size(j->hash_table);
+}
+
 void* json_data(json_value_t* v){
     return v->data;
 }
