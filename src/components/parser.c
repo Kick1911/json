@@ -120,7 +120,7 @@ json_t* json_parse(const char* start, const char* end){
     const char* s = start, *e = end, *value_end = NULL;
     json_t* json = json_create();
 
-    while( s < e && (s = strchr(s, '"')) ){
+    while( (s = strchr(s, '"')) && s < e ){
         char key[255] = {0};
         void* value = NULL;
         sscanf(s + 1, "%[^\"]", key);
