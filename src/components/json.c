@@ -41,17 +41,19 @@ json_value_t* json_value(void* data, json_type_t type){
 json_t* json_parse_file(const char* file_path){
     size_t size = 0;
     json_t* json = NULL;
+    FILE* f;
 
-    WITH_FILE(fopen(file_path, "r"), f,
-        fseek(f, 0, SEEK_END);
-        size = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        WITH(malloc(sizeof(char) * (size + 1)), str,
-            fread(str, sizeof(char), size, f);
-            ((char*)str)[size] = 0;
-            json = json_parse(str, ((char*)str) + size);
-        );
+    f = fopen(file_path, "r");
+    if(!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    WITH(malloc(sizeof(char) * (size + 1)), str,
+        fread(str, sizeof(char), size, f);
+        ((char*)str)[size] = 0;
+        json = json_parse(str, ((char*)str) + size);
     );
+    fclose(f);
     return json;
 }
 
@@ -68,10 +70,12 @@ size_t json_size(json_t* j){
 }
 
 void* json_data(json_value_t* v){
+    if(!v) return NULL;
     return v->data;
 }
 
 json_type_t json_type(json_value_t* v){
+    if(!v) return -1;
     return v->type;
 }
 
@@ -126,6 +130,7 @@ json_t* json_create(){
 }
 
 void json_free(json_t* j){
+    if(!j) return;
     h_free_table(j->hash_table);
     free(j);
 }
