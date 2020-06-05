@@ -1,3 +1,7 @@
+lib
+include
+*.a.*
+
 # Prerequisites
 *.d
 

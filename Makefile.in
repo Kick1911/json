@@ -1,3 +1,0 @@
-
-CONFIG_INSTALL_PATH=/usr/local/
-LDFLAGS += -lhash
