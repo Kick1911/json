@@ -1,7 +1,0 @@
-{
-    "name": "json",
-    "version": "0.0.1",
-    "install_path": "/opt",
-    "dependencies": "libhash_table.a.0.0.1",
-    "cflags": ""
-}
