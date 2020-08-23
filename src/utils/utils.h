@@ -114,10 +114,13 @@ static char* xstrrchr(const char* start, const char* end, char c){
     return (char*)p + 1;
 }
 
-int countchr(const char* s, const char* e, char c){
+/*
+* Count number of times a character appears in a string
+*/
+/* static int countchr(const char* s, const char* e, char c){
     int count = 0;
     while(s < e) if(*s++ == c) count++;
     return count;
-}
+} */
 
 #endif

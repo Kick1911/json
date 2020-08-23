@@ -1,5 +1,6 @@
 #include <json.h>
 #include <utils/json.h>
+#include <utils/utils.h>
 #include <utils/essentials.h>
 #include <hash_table.h>
 #include <malloc.h>
@@ -7,17 +8,21 @@
 
 json_value_t* json_value(void* data, json_type_t type){
     void* value;
+
     switch(type){
         case JSON_FLOAT:
             value = malloc(sizeof(double));
+            if(!value) goto failed;
             memcpy(value, data, sizeof(double));
         break;
         case JSON_NUMERIC:
             value = malloc(sizeof(long int));
+            if(!value) goto failed;
             memcpy(value, data, sizeof(long int));
         break;
         case JSON_BOOLEAN:
             value = malloc(sizeof(char));
+            if(!value) goto failed;
             memset(value, (long int)data, sizeof(char));
         break;
         case JSON_NULL:
@@ -30,43 +35,65 @@ json_value_t* json_value(void* data, json_type_t type){
         case JSON_STRING:{
             size_t size = sizeof(char) * (strlen((char*)data) + 1);
             value = malloc(size);
+            if(!value) goto failed;
             memcpy(value, data, size);
         }break;
         default:
-        break;
+            return NULL;
     }
+
     return pack_json_value(value, type);
+
+    failed:
+    return NULL;
 }
 
+/*
+ * Errors:
+ * - All errors for `fopen`
+ */
 json_t* json_parse_file(const char* file_path){
+    char* str;
     size_t size = 0;
     json_t* json = NULL;
     FILE* f;
 
-    f = fopen(file_path, "r");
-    if(!f) return NULL;
+    if(!(f = fopen(file_path, "r"))) return NULL;
+
     fseek(f, 0, SEEK_END);
     size = ftell(f);
     fseek(f, 0, SEEK_SET);
-    WITH(malloc(sizeof(char) * (size + 1)), str,
-        fread(str, sizeof(char), size, f);
-        ((char*)str)[size] = 0;
-        json = json_parse(str, ((char*)str) + size);
-    );
+
+    str = malloc(sizeof(char) * (size + 1));
+    if(!str) goto failed_after_fopen;
+
+    fread(str, sizeof(char), size, f);
+    str[size] = 0;
+    json = json_parse(str, str + size);
+    if(!json) return NULL;
+
+    free(str);
     fclose(f);
     return json;
+
+    failed_after_fopen:
+    fclose(f);
+    return NULL;
 }
 
 int json_set(json_t* j, const char* key, json_value_t* v){
     return h_insert(j->hash_table, key, v);
 }
 
+/*
+ * Errors from `hash_table` library
+ */
 json_value_t* json_get(json_t* j, const char* key){
     return h_lookup(j->hash_table, key);
 }
 
 size_t json_size(json_t* j){
-    return h_size(j->hash_table);
+    return H_SIZE(j->hash_table);
 }
 
 void* json_data(json_value_t* v){
@@ -80,8 +107,13 @@ json_type_t json_type(json_value_t* v){
 }
 
 json_iterator_t* json_iter(json_t* j){
-    json_iterator_t* iter = (json_iterator_t*)malloc(sizeof(json_iterator_t));
+    json_iterator_t* iter;
+
+    iter = malloc(sizeof(json_iterator_t));
+    if(!iter) return NULL;
+
     iter->h_iter = h_iter(j->hash_table);
+
     return iter;
 }
 
@@ -123,10 +155,20 @@ static void json_free_cb(void* n){
 }
 
 json_t* json_create(){
-    json_t* j = (json_t*)malloc(sizeof(json_t));
+    json_t* j;
+
+    j = malloc(sizeof(json_t));
+    if(!j) return NULL;
+
     j->size = 0;
     j->hash_table = h_create_table(json_free_cb);
+    if(!j->hash_table) goto failed;
+
     return j;
+
+    failed:
+    free(j);
+    return NULL;
 }
 
 void json_free(json_t* j){
@@ -136,8 +178,12 @@ void json_free(json_t* j){
 }
 
 json_value_t** json_array(size_t s){
-    json_value_t** a = malloc(sizeof(json_value_t*) * (s + 1));
+    json_value_t** a;
+
+    a = malloc(sizeof(json_value_t*) * (s + 1));
     if(!a) return NULL;
+
     a[s] = NULL;
     return a;
 }
+
