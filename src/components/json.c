@@ -92,6 +92,10 @@ json_value_t* json_get(json_t* j, const char* key){
     return h_lookup(j->hash_table, key);
 }
 
+json_value_t* json_delete(json_t* j, const char* key){
+    return h_delete(j->hash_table, key);
+}
+
 size_t json_size(json_t* j){
     return H_SIZE(j->hash_table);
 }
@@ -126,7 +130,7 @@ int json_next(json_iterator_t* iter, char** k, void** v){
     return 0;
 }
 
-static void json_free_cb(void* n){
+static void json_value_free_cb(void* n){
     json_value_t* v = n;
     switch(v->type){
         case JSON_PARSE_ERROR:
@@ -146,7 +150,7 @@ static void json_free_cb(void* n){
             void* ptr;
             json_value_t** arr = v->data;
             while( (ptr = *arr++) )
-                json_free_cb(ptr);
+                json_value_free_cb(ptr);
             free(v->data);
         }
         break;
@@ -161,7 +165,7 @@ json_t* json_create(){
     if(!j) return NULL;
 
     j->size = 0;
-    j->hash_table = h_create_table(json_free_cb);
+    j->hash_table = h_create_table(json_value_free_cb);
     if(!j->hash_table) goto failed;
 
     return j;

@@ -145,5 +145,7 @@ void test_suite(){
 
 int main(void){
     T_SUITE(Parse JSON, test_suite());
+    T_CONCLUDE();
 	return 0;
 }
+

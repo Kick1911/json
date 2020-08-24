@@ -29,5 +29,7 @@ void suite_last_occurrence(){
 
 int main(void){
     T_SUITE(Last occurrence, suite_last_occurrence());
+    T_CONCLUDE();
 	return 0;
 }
+
