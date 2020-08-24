@@ -164,7 +164,6 @@ json_t* json_create(){
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->size = 0;
     j->hash_table = h_create_table(json_value_free_cb);
     if(!j->hash_table) goto failed;
 
