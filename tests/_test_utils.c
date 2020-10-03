@@ -31,3 +31,4 @@ int main(void){
     T_SUITE(Last occurrence, suite_last_occurrence());
 	return 0;
 }
+

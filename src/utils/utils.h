@@ -4,13 +4,6 @@
 #include <string.h>
 #include <malloc.h>
 
-#define ABORT_INT(statement) \
-    int r = statement; \
-    if(r){ \
-        fprintf(stderr, "%s:%d: " #statement " has failed\n", __FILE__, __LINE__); \
-        exit(r); \
-    }
-
 typedef struct{
     char* start;
     char* end;
@@ -32,6 +25,12 @@ static char* ignore_space(const char* s){
         p++;
     }
     return (char*)p - 1;
+}
+
+static void* xmemset(void *s, int c, size_t n){
+    unsigned char* p = s, ch = c;
+    while( n-- && (*p++ = ch) );
+    return p;
 }
 
 static char* end_of_string(const char* s){
@@ -107,12 +106,12 @@ static substring_t* split_str_array(const char* s, const char* e, int* length){
     return arr;
 }
 
-static char* xstrrchr(const char* start, const char* end, char c){
+/* static char* xstrrchr(const char* start, const char* end, char c){
     const char* p = end;
     while( p >= start && *p-- != c );
     if(p[1] != c) return NULL;
     return (char*)p + 1;
-}
+} */
 
 /*
 * Count number of times a character appears in a string
