@@ -3,7 +3,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <hash_table.h>
-#include <json.h>
+#include <components/json.h>
 
 void test_suite(){
     TEST(Integer value,

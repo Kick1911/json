@@ -1,5 +1,5 @@
 #include <unitest.h>
-#include <json.h>
+#include <components/json.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -106,6 +106,91 @@ int main(void){
         T_ASSERT_DOUBLE(*((double*)json_data(arr_out[1])), 3.14);
         json_free(json);
     );
+
+    T_SUITE(JSON Dump,
+        char* res;
+        void* json = json_create();
+        void* json2 = json_create();
+        long int d = 5432543;
+        double f = 3.14;
+        char str[] = "I am Kick";
+        json_value_t** arr = json_array(2);
+
+        arr[0] = json_value(str, JSON_STRING);
+        arr[1] = json_value(&f, JSON_FLOAT);
+        json_set(json, "kickness", json_value(arr, JSON_ARRAY));
+        json_set(json, "boolean", json_value((char*)1, JSON_BOOLEAN));
+        json_set(json2, "number", json_value(&d, JSON_NUMERIC));
+        json_set(json, "object", json_value(json2, JSON_OBJECT));
+
+        TEST(Calculate print size,
+            /* {"number": 5432543} */
+            res = json_dump(json2, 0);
+            T_ASSERT_NUM(json_calculate_print_size(json2, 0), strlen(res));
+            free(res);
+            /* {                        2 char
+             *     "number": 5432543    22 char
+             * }                        1 char, total: 25
+             */
+            res = json_dump(json2, 1);
+            T_ASSERT_NUM(json_calculate_print_size(json2, 1), strlen(res));
+            free(res);
+            /* {                            2 char
+             *     "kickness": [            18 char
+             *         "I am Kick",         21 char
+             *         3.140000             17 char
+             *     ],                       7 char
+             *     "boolean": true,         21 char
+             *     "object": {              16 char
+             *         "number": 5432543    26 char
+             *     }                        6 char
+             * }                            1 char, total: 135
+             */
+            res = json_dump(json, 1);
+            T_ASSERT_NUM(json_calculate_print_size(json, 1), 135);
+            free(res);
+            /* {"kickness": ["I am Kick", 3.140000], "boolean": true, "object": {"number": 5432543}} */
+            res = json_dump(json, 0);
+            T_ASSERT_NUM(json_calculate_print_size(json, 0), strlen(res));
+            free(res);
+            /* {                            2 char
+             *     "object": {              16 char
+             *         "number": 5432543    26 char
+             *     }                        6 char
+             * }                            1 char, total: 51
+             */
+        );
+
+        TEST(Value sizes,
+            T_ASSERT_NUM(arr[0]->size, 11); /* String size */
+            T_ASSERT_NUM(arr[1]->size, 8); /* Float size */
+            T_ASSERT_NUM(json_get(json2, "number")->size, 7); /* Number size */
+            T_ASSERT_NUM(json_get(json, "boolean")->size, 4); /* Boolean size */
+        );
+
+        TEST(BLOB,
+            res = json_dump(json, 0);
+            T_ASSERT_STRING(res, "{\"kickness\": [\"I am Kick\", 3.140000], \"boolean\": true, \"object\": {\"number\": 5432543}}");
+            free(res);
+        );
+
+        TEST(Pretty print,
+            res = json_dump(json, 1);
+            T_ASSERT_STRING(res, "{\n"
+            "    \"kickness\": [\n"
+            "        \"I am Kick\",\n"
+            "        3.140000\n"
+            "    ],\n"
+            "    \"boolean\": true,\n"
+            "    \"object\": {\n"
+            "        \"number\": 5432543\n"
+            "    }\n"
+            "}");
+            free(res);
+        );
+        json_free(json);
+    );
+
     T_CONCLUDE();
     return 0;
 }

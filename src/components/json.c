@@ -1,31 +1,50 @@
-#include <json.h>
+#include <components/json.h>
 #include <utils/json.h>
 #include <utils/utils.h>
-#include <utils/essentials.h>
 #include <hash_table.h>
 #include <malloc.h>
 #include <string.h>
 
+char TAB_CH = ' ';
+int TAB_CH_COUNT = 4;
+
+int json_print_value(char*, json_value_t*, int, int);
+
+int count_digits(long int n){
+    int c;
+
+    if(!n) return 0;
+
+    c = 1;
+    while( (n = n/10) ) c++;
+    return c;
+}
+
 json_value_t* json_value(void* data, json_type_t type){
+    size_t size = 0;
     void* value;
 
     switch(type){
         case JSON_FLOAT:
+            size = 7 + count_digits(*((double*)data));
             value = malloc(sizeof(double));
             if(!value) goto failed;
             memcpy(value, data, sizeof(double));
         break;
         case JSON_NUMERIC:
+            size = count_digits(*((long int*)data));
             value = malloc(sizeof(long int));
             if(!value) goto failed;
             memcpy(value, data, sizeof(long int));
         break;
         case JSON_BOOLEAN:
+            size = ((long int)data) ? 4: 5;
             value = malloc(sizeof(char));
             if(!value) goto failed;
             memset(value, (long int)data, sizeof(char));
         break;
         case JSON_NULL:
+            size = 8; /* 6 + 2 for quotes */
             value = NULL;
         break;
         case JSON_ARRAY:
@@ -33,16 +52,17 @@ json_value_t* json_value(void* data, json_type_t type){
             value = data;
         break;
         case JSON_STRING:{
-            size_t size = sizeof(char) * (strlen((char*)data) + 1);
+            size = sizeof(char) * (strlen((char*)data) + 1);
             value = malloc(size);
             if(!value) goto failed;
             memcpy(value, data, size);
+            size += 1; /* Two more for quotes - the extra null char */
         }break;
         default:
             return NULL;
     }
 
-    return pack_json_value(value, type);
+    return pack_json_value(value, size, type);
 
     failed:
     return NULL;
@@ -86,7 +106,7 @@ int json_set(json_t* j, const char* key, json_value_t* v){
 }
 
 /*
- * Errors from `hash_table` library
+ * Errors from `hash_table` library `h_lookup` function
  */
 json_value_t* json_get(json_t* j, const char* key){
     return h_lookup(j->hash_table, key);
@@ -132,6 +152,7 @@ int json_next(json_iterator_t* iter, char** k, void** v){
 
 static void json_value_free_cb(void* n){
     json_value_t* v = n;
+
     switch(v->type){
         case JSON_PARSE_ERROR:
         case JSON_MEMORY_ALLOC_ERROR:
@@ -164,7 +185,7 @@ json_t* json_create(){
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->hash_table = h_create_table(json_value_free_cb);
+    j->hash_table = h_create_table(json_free_cb);
     if(!j->hash_table) goto failed;
 
     return j;
@@ -188,5 +209,139 @@ json_value_t** json_array(size_t s){
 
     a[s] = NULL;
     return a;
+}
+
+char* _json_dump(json_t* json, int pretty_print, int level){
+    void* v;
+    int i_keys;
+    size_t size = json_calculate_print_size(json, pretty_print);
+    char* res = malloc(sizeof(char) * (size + 9));
+    void* iter = json_iter(json);
+    char* ptr = res, *k;
+
+    i_keys = json_size(json);
+    ptr += sprintf(ptr, "{");
+    while(!json_next(iter, &k, &v)){
+        ptr = xmemset(ptr, '\n', pretty_print);
+        ptr = xmemset(ptr, TAB_CH, pretty_print * level * TAB_CH_COUNT);
+        ptr += sprintf(ptr, "\"%s\": ", k);
+        ptr += json_print_value(ptr, v, pretty_print, level);
+        if(--i_keys)
+            ptr += sprintf(ptr, ",%s", (pretty_print)?"":" ");
+    }
+    ptr = xmemset(ptr, '\n', pretty_print);
+    ptr = xmemset(ptr, TAB_CH, pretty_print * (level - 1) * TAB_CH_COUNT);
+    ptr += sprintf(ptr, "}");
+    return res;
+}
+
+int json_print_value(char* buf, json_value_t* v, int pretty_print, int level){
+    switch(v->type){
+        case JSON_PARSE_ERROR:
+        case JSON_MEMORY_ALLOC_ERROR:
+            return sprintf(buf, "\"(error)\"");
+        case JSON_NULL:
+            return sprintf(buf, "\"(null)\"");
+        case JSON_FLOAT:
+            return sprintf(buf, "%.6f", *((double*)v->data));
+        case JSON_NUMERIC:
+            return sprintf(buf, "%ld", *((long int*)v->data));
+        case JSON_BOOLEAN:
+            return sprintf(buf, "%s", (*((unsigned char*)v->data) ? "true" : "false"));
+        case JSON_STRING:
+            return sprintf(buf, "\"%s\"", (char*)v->data);
+        case JSON_OBJECT:{
+            int size = 0;
+            char* res = _json_dump(v->data, pretty_print, level + 1);
+            size = sprintf(buf, "%s", res);
+            free(res);
+            return size;
+        }
+
+        case JSON_ARRAY:{
+            void* ptr;
+            char* buf_start = buf;
+            json_value_t** arr = v->data;
+
+            buf += sprintf(buf, "[");
+            buf = xmemset(buf, '\n', pretty_print);
+            buf = xmemset(buf, TAB_CH, pretty_print * (level + 1) * TAB_CH_COUNT);
+            while( (ptr = *arr++) ){
+                buf += json_print_value(buf, ptr, pretty_print, level + 1);
+                if(*arr){
+                    buf += sprintf(buf, ",%c", (pretty_print) ? '\n' : ' ');
+                    buf = xmemset(buf, TAB_CH, pretty_print * (level + 1) * TAB_CH_COUNT);
+                }
+            }
+            buf = xmemset(buf, '\n', pretty_print);
+            buf = xmemset(buf, TAB_CH, pretty_print * level * TAB_CH_COUNT);
+            buf += sprintf(buf, "]");
+            return buf - buf_start;
+        }
+    }
+    return -1;
+}
+
+char* json_dump(json_t* json, int pretty_print){
+    return _json_dump(json, pretty_print, 1);
+}
+
+size_t json_calculate_print_size(json_t* json, int pretty_print){
+    char* k;
+    size_t size = 0;
+    void* iter, *stack, *v, *json_wrap;
+    STACK_INIT(void*, json, 255);
+    STACK_INIT(int, level, 255);
+
+    json_wrap = json_value(json, JSON_OBJECT);
+
+    STACK_PUSH(json, json_wrap);
+    STACK_PUSH(level, 1);
+    while( (stack = STACK_POP(json, NULL)) ){
+        int level = STACK_POP(level, 0);
+
+        if(json_type(stack) == JSON_OBJECT){
+            int count = 0;
+            iter = json_iter(json_data(stack));
+
+            size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* !pretty_print 2 brackets */
+            while(!json_next(iter, &k, &v)){
+                switch(json_type(v)){
+                    case JSON_ARRAY:
+                    case JSON_OBJECT:
+                        STACK_PUSH(json, v);
+                        STACK_PUSH(level, level + 1);
+                        size += strlen(k);
+                    break;
+                    default:
+                        size += strlen(k) + ((json_value_t*)v)->size;
+                }
+                size += ((pretty_print)?TAB_CH_COUNT*level + 1:0) + 4; /* tab/space + key + 2 quotes + 1 colon + 1 space */
+                if(count++)
+                    size += (pretty_print)? 1 : 2; /* comma or comma + space */
+            }
+
+        }else if(json_type(stack) == JSON_ARRAY){
+            int count = 0;
+            json_value_t** arr = json_data(stack);
+            size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* 2 brackets*/
+            while( (v = *arr++) ){
+                switch(json_type(v)){
+                    case JSON_ARRAY:
+                    case JSON_OBJECT:
+                        STACK_PUSH(json, v);
+                        STACK_PUSH(level, level + 1);
+                    break;
+                    default:
+                        size += ((json_value_t*)v)->size;
+                        size += (pretty_print) ? TAB_CH_COUNT*level + 1 : 0; /* tab/space */
+                }
+                if(count++)
+                    size += (pretty_print)? 1 : 2; /* comma or comma + space */
+            }
+        }
+    }
+    free(json_wrap);
+    return size;
 }
 
