@@ -220,7 +220,6 @@ char* _json_dump(json_t* json, int pretty_print, int level){
     while(!json_next(iter, &k, &v)){
         ptr = xmemset(ptr, '\n', pretty_print);
         ptr = xmemset(ptr, TAB_CH, pretty_print * level * TAB_CH_COUNT);
-        /* ptr = xmemset(ptr, ' ', !pretty_print); */
         ptr += sprintf(ptr, "\"%s\": ", k);
         ptr += json_print_value(ptr, v, pretty_print, level);
         if(--i_keys)
@@ -228,7 +227,6 @@ char* _json_dump(json_t* json, int pretty_print, int level){
     }
     ptr = xmemset(ptr, '\n', pretty_print);
     ptr = xmemset(ptr, TAB_CH, pretty_print * (level - 1) * TAB_CH_COUNT);
-    /* ptr = xmemset(ptr, ' ', !pretty_print); */
     ptr += sprintf(ptr, "}");
     return res;
 }
@@ -284,14 +282,6 @@ char* json_dump(json_t* json, int pretty_print){
     return _json_dump(json, pretty_print, 1);
 }
 
-#define STACK_INIT(type, name, size) \
-    type _STACK_BASE_##name[(size)]; \
-    type* _STACK_HEAD_##name = _STACK_BASE_##name; \
-    type* _STACK_END_##name = _STACK_BASE_##name + (size) - 1
-
-#define STACK_PUSH(name, item) (_STACK_HEAD_##name < _STACK_END_##name) ? *_STACK_HEAD_##name++ = (item) : NULL
-#define STACK_POP(name) (_STACK_BASE_##name < _STACK_HEAD_##name) ? *--_STACK_HEAD_##name : NULL
-
 size_t json_calculate_print_size(json_t* json, int pretty_print){
     char* k;
     size_t size = 0;
@@ -303,31 +293,26 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
 
     STACK_PUSH(json, json_wrap);
     STACK_PUSH(level, 1);
-    while( (stack = STACK_POP(json)) ){
-        int level = STACK_POP(level);
+    while( (stack = STACK_POP(json, NULL)) ){
+        int level = STACK_POP(level, 0);
 
         if(json_type(stack) == JSON_OBJECT){
             int count = 0;
             iter = json_iter(json_data(stack));
 
             size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* !pretty_print 2 brackets */
-            /* printf("Brackets + tab + next line: %d\n", (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2); */
             while(!json_next(iter, &k, &v)){
                 switch(json_type(v)){
                     case JSON_ARRAY:
                     case JSON_OBJECT:
                         STACK_PUSH(json, v);
                         STACK_PUSH(level, level + 1);
-                        /* printf("key: %d\n", strlen(k)); */
                         size += strlen(k);
                     break;
                     default:
-                        /* printf("key: %d, value: %d\n", strlen(k), ((json_value_t*)v)->size); */
                         size += strlen(k) + ((json_value_t*)v)->size;
-                        /* if(pretty_print) size++; */
                 }
                 size += ((pretty_print)?TAB_CH_COUNT*level + 1:0) + 4; /* tab/space + key + 2 quotes + 1 colon + 1 space */
-                /* printf("Value tab + extras: %d\n", ((pretty_print)?TAB_CH_COUNT*level + 1:0) + 4); */
                 if(count++)
                     size += (pretty_print)? 1 : 2; /* comma or comma + space */
             }
