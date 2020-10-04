@@ -119,17 +119,6 @@ json_value_t* json_delete(json_t* j, const char* key){
 size_t json_size(json_t* j){
     return H_SIZE(j->hash_table);
 }
-
-void* json_data(json_value_t* v){
-    if(!v) return NULL;
-    return v->data;
-}
-
-json_type_t json_type(json_value_t* v){
-    if(!v) return -1;
-    return v->type;
-}
-
 json_iterator_t* json_iter(json_t* j){
     json_iterator_t* iter;
 
@@ -141,16 +130,18 @@ json_iterator_t* json_iter(json_t* j){
     return iter;
 }
 
-int json_next(json_iterator_t* iter, char** k, void** v){
+int json_next(json_iterator_t* iter, char** k, json_value_t** v){
+    void* void_v;
     h_iter_t* hi = iter->h_iter;
-    if(h_next(hi, k, v)){
+    if(h_next(hi, k, &void_v)){
         free(iter);
         return 1;
     }
+    *v = void_v;
     return 0;
 }
 
-static void json_value_free_cb(void* n){
+static void json_free_cb(void* n){
     json_value_t* v = n;
 
     switch(v->type){
@@ -171,7 +162,7 @@ static void json_value_free_cb(void* n){
             void* ptr;
             json_value_t** arr = v->data;
             while( (ptr = *arr++) )
-                json_value_free_cb(ptr);
+                json_free_cb(ptr);
             free(v->data);
         }
         break;
@@ -212,7 +203,7 @@ json_value_t** json_array(size_t s){
 }
 
 char* _json_dump(json_t* json, int pretty_print, int level){
-    void* v;
+    json_value_t* v;
     int i_keys;
     size_t size = json_calculate_print_size(json, pretty_print);
     char* res = malloc(sizeof(char) * (size + 9));
@@ -289,8 +280,9 @@ char* json_dump(json_t* json, int pretty_print){
 size_t json_calculate_print_size(json_t* json, int pretty_print){
     char* k;
     size_t size = 0;
-    void* iter, *stack, *v, *json_wrap;
-    STACK_INIT(void*, json, 255);
+    json_value_t* v, *stack;
+    void* iter, *json_wrap;
+    STACK_INIT(json_value_t*, json, 255);
     STACK_INIT(int, level, 255);
 
     json_wrap = json_value(json, JSON_OBJECT);
@@ -300,13 +292,13 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
     while( (stack = STACK_POP(json, NULL)) ){
         int level = STACK_POP(level, 0);
 
-        if(json_type(stack) == JSON_OBJECT){
+        if(stack->type == JSON_OBJECT){
             int count = 0;
-            iter = json_iter(json_data(stack));
+            iter = json_iter(stack->data);
 
             size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* !pretty_print 2 brackets */
             while(!json_next(iter, &k, &v)){
-                switch(json_type(v)){
+                switch(v->type){
                     case JSON_ARRAY:
                     case JSON_OBJECT:
                         STACK_PUSH(json, v);
@@ -314,26 +306,26 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
                         size += strlen(k);
                     break;
                     default:
-                        size += strlen(k) + ((json_value_t*)v)->size;
+                        size += strlen(k) + v->size;
                 }
                 size += ((pretty_print)?TAB_CH_COUNT*level + 1:0) + 4; /* tab/space + key + 2 quotes + 1 colon + 1 space */
                 if(count++)
                     size += (pretty_print)? 1 : 2; /* comma or comma + space */
             }
 
-        }else if(json_type(stack) == JSON_ARRAY){
+        }else if(stack->type == JSON_ARRAY){
             int count = 0;
-            json_value_t** arr = json_data(stack);
+            json_value_t** arr = stack->data;
             size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* 2 brackets*/
             while( (v = *arr++) ){
-                switch(json_type(v)){
+                switch(v->type){
                     case JSON_ARRAY:
                     case JSON_OBJECT:
                         STACK_PUSH(json, v);
                         STACK_PUSH(level, level + 1);
                     break;
                     default:
-                        size += ((json_value_t*)v)->size;
+                        size += v->size;
                         size += (pretty_print) ? TAB_CH_COUNT*level + 1 : 0; /* tab/space */
                 }
                 if(count++)

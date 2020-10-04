@@ -11,7 +11,7 @@ int main(void){
 
     TEST(JSON interface,
         void* kick;
-        void* kick_json_value;
+        json_value_t* kick_json_value;
         void* json = json_create();
         void* json2 = json_create();
         double f = 3.14;
@@ -27,13 +27,13 @@ int main(void){
         T_ASSERT(!json_delete(json, "no_exists"));
         T_ASSERT_NUM(errno, ENOENT);
 
-        kick = json_data(json_get(json, "kick"));
+        kick = json_get(json, "kick")->data;
         T_ASSERT(kick);
-        T_ASSERT_FLOAT(*((double*)json_data(json_get(kick, "a"))), 3.14);
+        T_ASSERT_FLOAT(*((double*)json_get(kick, "a")->data), 3.14);
         T_ASSERT(!json_set(json, "kick", json_value(str, JSON_STRING)));
 
         kick_json_value = json_delete(json, "kick");
-        kick = json_data(kick_json_value);
+        kick = kick_json_value->data;
         free(kick_json_value);
 
         T_ASSERT(kick);
@@ -50,7 +50,7 @@ int main(void){
         long int b = 135;
         double d = 3.14;
         char* k = NULL;
-        void* v = NULL;
+        json_value_t* v = NULL;
 
         json_set(json, "a", json_value((char*)0, JSON_BOOLEAN));
         json_set(json, "c", json_value((char*)1, JSON_BOOLEAN));
@@ -62,23 +62,23 @@ int main(void){
 
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "a");
-        T_ASSERT(!*((unsigned char*)json_data(v)));
+        T_ASSERT(!*((unsigned char*)v->data));
 
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "c");
-        T_ASSERT(*((unsigned char*)json_data(v)));
+        T_ASSERT(*((unsigned char*)v->data));
 
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "b");
-        T_ASSERT_NUM(*((long int*)json_data(v)), 135);
+        T_ASSERT_NUM(*((long int*)v->data), 135);
 
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "d");
-        T_ASSERT_FLOAT(*((double*)json_data(v)), 3.14);
+        T_ASSERT_FLOAT(*((double*)v->data), 3.14);
 
         json_next(iter, &k, &v);
         T_ASSERT_STRING(k, "Kick");
-        T_ASSERT(!json_data(v));
+        T_ASSERT(!v->data);
 
         T_ASSERT(json_next(iter, &k, &v));
         json_free(json);
@@ -99,11 +99,11 @@ int main(void){
         arr[0] = json_value(str, JSON_STRING);
         arr[1] = json_value(&f, JSON_FLOAT);
         json_set(json, "a", json_value(arr, JSON_ARRAY));
-        arr_out = json_data(json_get(json, "a"));
+        arr_out = json_get(json, "a")->data;
 
         T_ASSERT(arr_out);
-        T_ASSERT_STRING((char*)json_data(*arr_out), "I am Kick");
-        T_ASSERT_DOUBLE(*((double*)json_data(arr_out[1])), 3.14);
+        T_ASSERT_STRING((char*)arr_out[0]->data, "I am Kick");
+        T_ASSERT_DOUBLE(*((double*)arr_out[1]->data), 3.14);
         json_free(json);
     );
 
