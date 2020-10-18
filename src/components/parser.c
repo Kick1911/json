@@ -17,7 +17,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
             char* e = other_end(s, "{}");
             if(!e) return JSON_PARSE_ERROR;
             type = JSON_OBJECT;
-            v = json_value(json_parse(s, e), type);
+            v = json_value_ref(json_parse(s, e), type);
             if(!v) return JSON_MEMORY_ALLOC_ERROR;
             s = e + 1;
         }break;
@@ -68,7 +68,7 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
             s = e + 1;
             free(arr);
             type = JSON_ARRAY;
-            v = json_value(json_arr, type);
+            v = json_value_ref(json_arr, type);
         }break;
 
         case 't':
