@@ -8,9 +8,11 @@
 char TAB_CH = ' ';
 int TAB_CH_COUNT = 4;
 
-int json_print_value(char*, json_value_t*, int, int);
+static int
+json_print_value(char*, json_value_t*, int, int);
 
-int count_digits(long int n){
+static int
+count_digits(long int n){
     int c;
 
     if(!n) return 0;
@@ -20,7 +22,35 @@ int count_digits(long int n){
     return c;
 }
 
-json_value_t* json_value(void* data, json_type_t type){
+static json_value_t**
+json_clone_array(json_value_t** ja){
+    size_t count = 0;
+    json_value_t** n, **ptr = ja;
+
+    while(*ptr++) count++;
+    n = malloc(sizeof(*ja) * (count+1));
+    n[count] = NULL;
+
+    while( count-- ) n[count] = json_value(ja[count]->data, ja[count]->type);
+    return n;
+}
+
+static json_t*
+json_clone(const json_t* j){
+    void* iter, *n;
+    char* k = NULL;
+    json_value_t* v = NULL;
+
+    iter = json_iter(j);
+    n = json_create();
+
+    while(!json_next(iter, &k, &v))
+        json_set(n, k, json_value(v->data, v->type));
+    return n;
+}
+
+static json_value_t*
+make_json_value(void* data, json_type_t type, int by_ref){
     size_t size = 0;
     void* value;
 
@@ -43,20 +73,25 @@ json_value_t* json_value(void* data, json_type_t type){
             if(!value) goto failed;
             memset(value, (long int)data, sizeof(char));
         break;
+
         case JSON_NULL:
             size = 8; /* 6 + 2 for quotes */
             value = NULL;
         break;
         case JSON_ARRAY:
+            if(by_ref) value = data;
+            else value = json_clone_array(data);
+        break;
         case JSON_OBJECT:
-            value = data;
+            if(by_ref) value = data;
+            else value = json_clone(data);
         break;
         case JSON_STRING:{
             size = sizeof(char) * (strlen((char*)data) + 1);
             value = malloc(size);
             if(!value) goto failed;
             memcpy(value, data, size);
-            size += 1; /* Two more for quotes - the extra null char */
+            size++; /* Plus the extra null char */
         }break;
         default:
             return NULL;
@@ -66,6 +101,16 @@ json_value_t* json_value(void* data, json_type_t type){
 
     failed:
     return NULL;
+}
+
+json_value_t*
+json_value(void* data, json_type_t type){
+    return make_json_value(data, type, 0);
+}
+
+json_value_t*
+json_value_ref(void* data, json_type_t type){
+    return make_json_value(data, type, 1);
 }
 
 /*
@@ -119,7 +164,8 @@ json_value_t* json_delete(json_t* j, const char* key){
 size_t json_size(json_t* j){
     return H_SIZE(j->hash_table);
 }
-json_iterator_t* json_iter(json_t* j){
+
+json_iterator_t* json_iter(const json_t* j){
     json_iterator_t* iter;
 
     iter = malloc(sizeof(json_iterator_t));
@@ -141,7 +187,8 @@ int json_next(json_iterator_t* iter, char** k, json_value_t** v){
     return 0;
 }
 
-static void json_free_cb(void* n){
+static void
+json_value_free_cb(void* n){
     json_value_t* v = n;
 
     switch(v->type){
@@ -162,12 +209,17 @@ static void json_free_cb(void* n){
             void* ptr;
             json_value_t** arr = v->data;
             while( (ptr = *arr++) )
-                json_free_cb(ptr);
+                json_value_free(ptr);
             free(v->data);
         }
         break;
     }
     free(v);
+}
+
+void
+json_value_free(json_value_t* v){
+    json_value_free_cb(v);
 }
 
 json_t* json_create(){
@@ -176,7 +228,7 @@ json_t* json_create(){
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->hash_table = h_create_table(json_free_cb);
+    j->hash_table = h_create_table(json_value_free_cb);
     if(!j->hash_table) goto failed;
 
     return j;
@@ -226,7 +278,8 @@ char* _json_dump(json_t* json, int pretty_print, int level){
     return res;
 }
 
-int json_print_value(char* buf, json_value_t* v, int pretty_print, int level){
+static int
+json_print_value(char* buf, json_value_t* v, int pretty_print, int level){
     switch(v->type){
         case JSON_PARSE_ERROR:
         case JSON_MEMORY_ALLOC_ERROR:
@@ -285,7 +338,7 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
     STACK_INIT(json_value_t*, json, 255);
     STACK_INIT(int, level, 255);
 
-    json_wrap = json_value(json, JSON_OBJECT);
+    json_wrap = json_value_ref(json, JSON_OBJECT);
 
     STACK_PUSH(json, json_wrap);
     STACK_PUSH(level, 1);
