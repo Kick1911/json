@@ -115,9 +115,10 @@ json_value_ref(void* data, json_type_t type){
 
 /*
  * Errors:
- * - All errors for `fopen`
+ * - All errors for `fopen` and `malloc`
  */
-json_t* json_parse_file(const char* file_path){
+json_t*
+json_parse_file(const char* file_path){
     char* str;
     size_t size = 0;
     json_t* json = NULL;
@@ -146,26 +147,31 @@ json_t* json_parse_file(const char* file_path){
     return NULL;
 }
 
-int json_set(json_t* j, const char* key, json_value_t* v){
+int
+json_set(json_t* j, const char* key, json_value_t* v){
     return h_insert(j->hash_table, key, v);
 }
 
 /*
  * Errors from `hash_table` library `h_lookup` function
  */
-json_value_t* json_get(json_t* j, const char* key){
+json_value_t*
+json_get(json_t* j, const char* key){
     return h_lookup(j->hash_table, key);
 }
 
-json_value_t* json_delete(json_t* j, const char* key){
+json_value_t*
+json_delete(json_t* j, const char* key){
     return h_delete(j->hash_table, key);
 }
 
-size_t json_size(json_t* j){
+size_t
+json_size(json_t* j){
     return H_SIZE(j->hash_table);
 }
 
-json_iterator_t* json_iter(const json_t* j){
+json_iterator_t*
+json_iter(const json_t* j){
     json_iterator_t* iter;
 
     iter = malloc(sizeof(json_iterator_t));
@@ -176,7 +182,8 @@ json_iterator_t* json_iter(const json_t* j){
     return iter;
 }
 
-int json_next(json_iterator_t* iter, char** k, json_value_t** v){
+int
+json_next(json_iterator_t* iter, char** k, json_value_t** v){
     void* void_v;
     h_iter_t* hi = iter->h_iter;
     if(h_next(hi, k, &void_v)){
@@ -238,13 +245,15 @@ json_t* json_create(){
     return NULL;
 }
 
-void json_free(json_t* j){
+void
+json_free(json_t* j){
     if(!j) return;
     h_free_table(j->hash_table);
     free(j);
 }
 
-json_value_t** json_array(size_t s){
+json_value_t**
+json_array(size_t s){
     json_value_t** a;
 
     a = malloc(sizeof(json_value_t*) * (s + 1));
@@ -254,7 +263,8 @@ json_value_t** json_array(size_t s){
     return a;
 }
 
-char* _json_dump(json_t* json, int pretty_print, int level){
+char*
+_json_dump(json_t* json, int pretty_print, int level){
     json_value_t* v;
     int i_keys;
     size_t size = json_calculate_print_size(json, pretty_print);
@@ -326,11 +336,13 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level){
     return -1;
 }
 
-char* json_dump(json_t* json, int pretty_print){
+char*
+json_dump(json_t* json, int pretty_print){
     return _json_dump(json, pretty_print, 1);
 }
 
-size_t json_calculate_print_size(json_t* json, int pretty_print){
+size_t
+json_calculate_print_size(json_t* json, int pretty_print){
     char* k;
     size_t size = 0;
     json_value_t* v, *stack;
@@ -345,11 +357,11 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
     while( (stack = STACK_POP(json, NULL)) ){
         int level = STACK_POP(level, 0);
 
+        size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* 2 brackets*/
         if(stack->type == JSON_OBJECT){
             int count = 0;
             iter = json_iter(stack->data);
 
-            size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* !pretty_print 2 brackets */
             while(!json_next(iter, &k, &v)){
                 switch(v->type){
                     case JSON_ARRAY:
@@ -369,7 +381,6 @@ size_t json_calculate_print_size(json_t* json, int pretty_print){
         }else if(stack->type == JSON_ARRAY){
             int count = 0;
             json_value_t** arr = stack->data;
-            size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* 2 brackets*/
             while( (v = *arr++) ){
                 switch(v->type){
                     case JSON_ARRAY:

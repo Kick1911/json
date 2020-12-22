@@ -6,7 +6,8 @@
 #include <hash_table.h>
 #include <components/json.h>
 
-json_type_t json_value_parse(const char* s, const char** end, void** value){
+json_type_t
+json_value_parse(const char* s, const char** end, void** value){
     char str[255];
     size_t length = 0;
     void* v = NULL;
@@ -124,7 +125,8 @@ json_type_t json_value_parse(const char* s, const char** end, void** value){
     return type;
 }
 
-json_t* json_parse(const char* start, const char* end){
+json_t*
+json_parse(const char* start, const char* end){
     const char* s = start, *e = end, *value_end = NULL;
     json_type_t ret;
     json_t* json = json_create();
@@ -151,7 +153,7 @@ json_t* json_parse(const char* start, const char* end){
         s = value_end;
     }
 
-    return json; 
+    return json;
 
     failed:
     json_free(json);
