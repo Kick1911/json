@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <utils/utils.h>
 #include <hash_table.h>
-#include <components/json.h>
+#include <json.h>
 
 json_type_t
 json_value_parse(const char* s, const char** end, void** value){

@@ -1,9 +1,10 @@
-#include <components/json.h>
+#include <malloc.h>
+#include <string.h>
+
+#include <json.h>
 #include <utils/json.h>
 #include <utils/utils.h>
 #include <hash_table.h>
-#include <malloc.h>
-#include <string.h>
 
 char TAB_CH = ' ';
 int TAB_CH_COUNT = 4;
@@ -28,7 +29,7 @@ json_clone_array(json_value_t** ja){
     json_value_t** n, **ptr = ja;
 
     while(*ptr++) count++;
-    n = malloc(sizeof(*ja) * (count+1));
+    n = malloc(sizeof(void*) * (count+1));
     n[count] = NULL;
 
     while( count-- ) n[count] = json_value(ja[count]->data, ja[count]->type);

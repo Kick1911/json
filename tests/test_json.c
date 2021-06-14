@@ -1,11 +1,11 @@
 #include <unitest.h>
-#include <components/json.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <malloc.h>
 #include <errno.h>
+#include <json.h>
 
 void test_interface(){
     json_t* kick_json;
