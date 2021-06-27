@@ -28,19 +28,13 @@ define print
 	@echo '  ${1}'
 endef
 
-define download
-curl 'https://app.smartfile.com/api/2/path/data/${1}/${2}' \
-	-H 'Authorization: Basic bFFoUVk0ek10SzRQbk11WjBYUjdFenQyOW9pSWZEOm9WclcxcWJDNlA4OWQyZjBuRTVrUElYaHczTGRvcQ==' \
-	-o ${3}/${2}
+define get_archive
+curl -L -f 'https://github.com/${1}/releases/download/v${2}/${3}' \
+	-o ${4}
 endef
 
-define upload
-curl -X POST  'https://app.smartfile.com/api/2/path/data/${1}' \
-	-H 'Authorization: Basic bFFoUVk0ek10SzRQbk11WjBYUjdFenQyOW9pSWZEOm9WclcxcWJDNlA4OWQyZjBuRTVrUElYaHczTGRvcQ==' \
-	-H 'Content-Type: multipart/form-data; charset=utf-8'   -F 'file=@${2}'
+define get_header
+curl -L -f 'https://raw.githubusercontent.com/${1}/v${2}/src/${3}.h' \
+	-o ${4}/${3}.h
 endef
 
-define mkdir
-curl -X PUT  'https://app.smartfile.com/api/2/path/oper/mkdir/${1}' \
-	-H 'Authorization: Basic bFFoUVk0ek10SzRQbk11WjBYUjdFenQyOW9pSWZEOm9WclcxcWJDNlA4OWQyZjBuRTVrUElYaHczTGRvcQ=='
-endef
