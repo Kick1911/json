@@ -168,7 +168,8 @@ json_delete(json_t* j, const char* key){
 
 size_t
 json_size(json_t* j){
-    return H_SIZE(j->hash_table);
+    h_table_t* ht = j->hash_table;
+    return ht->size;
 }
 
 json_iterator_t*
@@ -232,12 +233,17 @@ json_value_free(json_value_t* v){
 
 json_t* json_create(){
     json_t* j;
+    h_table_t* ht;
 
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->hash_table = h_create_table(json_value_free_cb);
+    j->hash_table = malloc(sizeof(h_table_t));
     if(!j->hash_table) goto failed;
+
+    h_table_init(j->hash_table);
+    ht = j->hash_table;
+    ht->free = json_value_free_cb;
 
     return j;
 
@@ -249,7 +255,8 @@ json_t* json_create(){
 void
 json_free(json_t* j){
     if(!j) return;
-    h_free_table(j->hash_table);
+    h_table_free(j->hash_table);
+    free(j->hash_table);
     free(j);
 }
 
