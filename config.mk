@@ -24,17 +24,26 @@ Q := @
 MAKEFLAGS += --no-print-directory
 endif
 
+GREEN = \033[0;32m
+BROWN = \033[0;33m
+YELLOW = \033[1;33m
+MAGENTA = \033[0;35m
+BRIGHT_MAGENTA = \033[1;35m
+CYAN = \033[0;36m
+BRIGHT_CYAN = \033[1;36m
+NC = \033[0m
+
 define print
-	@echo '  ${1}'
+	@echo -e '  ${1}${NC}'
 endef
 
 define get_archive
-curl -L -f 'https://github.com/${1}/releases/download/v${2}/${3}' \
+curl -L -f 'https://github.com/${1}/releases/download/${2}/${3}' \
 	-o ${4}
 endef
 
 define get_header
-curl -L -f 'https://raw.githubusercontent.com/${1}/v${2}/src/${3}.h' \
-	-o ${4}/${3}.h
+curl -L -f 'https://raw.githubusercontent.com/${1}/${2}/src/${3}' \
+	-o ${4}
 endef
 
