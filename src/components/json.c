@@ -143,7 +143,7 @@ json_parse_file(const char* file_path){
     fclose(f);
     return json;
 
-    failed_after_fopen:
+failed_after_fopen:
     fclose(f);
     return NULL;
 }

@@ -1,6 +1,7 @@
 # App
 json
 
+dependents
 lib
 include
 *.a.*

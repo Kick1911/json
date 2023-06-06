@@ -121,7 +121,7 @@ void test_suite(){
         void* root;
         json_t* src;
         json_t* ptr;
-        json_t* json = json_parse_file("./data/example.json");
+        json_t* json = json_parse_file("./tests/data/example.json");
         T_ASSERT(json);
         T_ASSERT_NUM(json_size(json), 1);
         root = json_get(json, "root")->data;
@@ -146,6 +146,6 @@ void test_suite(){
 int main(void){
     T_SUITE(Parse JSON, test_suite());
     T_CONCLUDE();
-	return 0;
+    return 0;
 }
 
