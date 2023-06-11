@@ -5,6 +5,7 @@ dependents
 lib
 include
 *.a.*
+*.tar.gz
 
 # Prerequisites
 *.d
