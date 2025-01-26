@@ -10,21 +10,21 @@ LIBRARY_FILES_VERSIONS := ${LIBRARY_FILES:%.so=%.so.${VERSION}}
 DEP_PACKAGE_PATHS := ${DEPENDENCIES:%=${DEP_PATH}/%}
 GITLAB_DEP := ${filter ${DEP_PATH}/gitlab/%,${DEP_PACKAGE_PATHS}}
 LDFLAGS += ${DEPENDENCIES:%=-L${DEP_PATH}/%}
-CFLAGS += ${DEPENDENCIES:%=-I${DEP_PATH}/%}
+CFLAGS += ${DEPENDENCIES:%=-I${DEP_PATH}/%} -DVERSION='"${VERSION}"'
 
-TAR_NAME ?= ${APP_NAME}-${VERSION}.tar.gz
+TAR_NAME ?= ${word 1,${APP_NAME}}-${VERSION}.tar.gz
 PACKAGE_CONTENTS ?= ${APP_NAME} ${ARCHIVE_FILES}
 
 all: set_debug_vars dep ${APP_NAME}
 
 set_debug_vars:
-	${eval DEBUG = -g3}
+	${eval DEBUG = -g3 -DLOG_LEVEL=1}
 
 ${APP_NAME}: %: ${SRC_PATH}/%.o ${COMP_O} ${UTILS_O}
 	${call print,${GREEN}BIN $@}
 	${Q}${CC} $^ -o $@ ${CFLAGS} ${LDFLAGS}
 
-%.o: %.c
+%.o: %.c ${shell find ${SRC_PATH} -name '*.h'}
 	${call print,${CYAN}CC $@}
 	${Q}${CC} -c $< -o $@ ${CFLAGS}
 
@@ -32,21 +32,18 @@ static_library: dep ${ARCHIVE_FILES}
 
 ${ARCHIVE_FILES}: set_pie ${DEP_PACKAGE_PATHS} ${COMP_O} ${UTILS_O}
 	${call print,${BROWN}AR $@}
-	${eval DEP_ARCHIVES = ${shell find ${DEP_PATH} -name '*.a'}}
+	${eval DEP_ARCHIVES = ${shell find ${DEP_PACKAGE_PATHS} -name '*.a'}}
 	${eval OBJECT_FILES = ${filter %.o,$^}}
 	${Q}for arch in ${DEP_ARCHIVES} ; do \
 		ar x $$arch --output `dirname $$arch` ; \
 	done
-	${Q}ar -cq $@ ${OBJECT_FILES} `find ${DEP_PATH} -name '*.o'`
+	${Q}ar -cq $@ ${OBJECT_FILES} `find ${DEP_PACKAGE_PATHS} -name '*.o'`
 
 set_pic:
 	${eval CFLAGS += -fPIC}
 
 set_pie:
 	${eval CFLAGS += -fPIE}
-
-set_debug:
-	${eval DEBUG = -g3}
 
 shared_library: dep ${LIBRARY_FILES}
 
@@ -58,9 +55,11 @@ ${LIBRARY_FILES_VERSIONS}: set_pic ${COMP_O} ${UTILS_O}
 	${call print,${BRIGHT_MAGENTA}LIB $@}
 	${Q}${CC} -shared -Wl,-soname,$@ -o $@ ${filter-out set_pic,$^} ${LDFLAGS}
 
-dep: ${GITLAB_DEP}
+dep: ${GITLAB_DEP} preprocess
 
-test: set_debug dep ${TESTS_OUT}
+test_compile: set_debug_vars dep ${TESTS_OUT}
+
+test: test_compile
 	@for exe in $(TESTS_OUT) ; do \
 		valgrind --error-exitcode=1 --leak-check=full $$exe ; \
 		if [ $$? -ne 0 ]; then return 1; fi; \
@@ -110,7 +109,7 @@ ${LIB_PATH}/%.h:
 	${Q}ln -sf ${shell pwd}/$@ ${shell pwd}/${INCLUDE_PATH}/${FILE_NAME}
 
 set_prod_vars:
-	${eval DEBUG = -O3}
+	${eval CFLAGS = ${PROD_CFLAGS} ${CFLAGS}}
 
 prod: set_prod_vars dep ${APP_NAME}
 
@@ -153,4 +152,4 @@ clean:
 	${call print,${BRIGHT_CYAN}CLEAN tests}
 	${Q}${RM} ${TESTS_OUT}
 
-.PHONY: package clean set_prod_vars set_debug_vars prod all set_pic install install_share_folder install_shared install_binary install_static dep
+.PHONY: preprocess package test test_compile clean set_prod_vars set_debug_vars prod all set_pic install install_share_folder install_shared install_binary install_static dep
