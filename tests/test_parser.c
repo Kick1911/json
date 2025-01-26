@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include <hash_table.h>
 #include <json.h>
 
 void
@@ -131,23 +130,30 @@ test_json_files() {
     json_t* src;
     json_t* ptr;
     json_t* json = json_parse_file("./tests/data/example.json");
+
     T_ASSERT(json);
     T_ASSERT_NUM(json_size(json), 1);
+
     root = json_get(json, "root")->data;
     T_ASSERT(root);
     T_ASSERT_NUM(json_size(root), 6);
+
     ptr = json_get(root, "tests")->data;
     T_ASSERT(ptr);
     T_ASSERT_NUM(json_size(ptr), 2);
+
     src = json_get(root, "src")->data;
     T_ASSERT(src);
     T_ASSERT_NUM(json_size(src), 3);
+
     ptr = json_get(src, "components")->data;
     T_ASSERT(ptr);
     T_ASSERT_NUM(json_size(ptr), 0);
+
     ptr = json_get(src, "utils")->data;
     T_ASSERT(ptr);
     T_ASSERT_NUM(json_size(ptr), 2);
+
     json_free(json);
 }
 

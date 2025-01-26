@@ -235,7 +235,7 @@ json_t* json_create(){
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->hash_table = malloc(sizeof(ptree_t));
+    j->hash_table = calloc(1, sizeof(ptree_t));
     if(!j->hash_table) goto failed;
 
     ptree_init(j->hash_table);

@@ -5,7 +5,6 @@
 #include <utils/parser_utils.h>
 #include <utils/ignore_space.h>
 #include <utils/split_str_array.h>
-#include <hash_table.h>
 #include <json.h>
 
 json_type_t
