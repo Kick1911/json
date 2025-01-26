@@ -253,7 +253,7 @@ json_free(json_t* j){
     if(!j) return;
 
     iter = p_iter(j->hash_table);
-    while ( p_next(iter, &k, &v) ) {
+    while ( !p_next(iter, &k, &v) ) {
         json_value_free_cb(v);
     }
 
