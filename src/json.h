@@ -14,7 +14,7 @@ typedef struct {
 } json_t;
 
 typedef struct {
-    void* h_iter; /* h_iter_t */
+    void* p_iter; /* h_iter_t */
 } json_iterator_t;
 
 typedef struct {

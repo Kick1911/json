@@ -3,8 +3,8 @@
 
 #include <json.h>
 #include <utils/json.h>
-#include <utils/utils.h>
-#include <hash_table.h>
+#include <utils/stack.h>
+#include <ptree.h>
 
 char TAB_CH = ' ';
 int TAB_CH_COUNT = 4;
@@ -150,25 +150,22 @@ failed_after_fopen:
 
 int
 json_set(json_t* j, const char* key, json_value_t* v){
-    return h_insert(j->hash_table, key, v);
+    return p_insert(j->hash_table, key, v);
 }
 
-/*
- * Errors from `hash_table` library `h_lookup` function
- */
 json_value_t*
 json_get(json_t* j, const char* key){
-    return h_lookup(j->hash_table, key);
+    return p_lookup(j->hash_table, key);
 }
 
 json_value_t*
 json_delete(json_t* j, const char* key){
-    return h_delete(j->hash_table, key);
+    return p_delete(j->hash_table, key);
 }
 
 size_t
 json_size(json_t* j){
-    h_table_t* ht = j->hash_table;
+    ptree_t* ht = j->hash_table;
     return ht->size;
 }
 
@@ -179,7 +176,7 @@ json_iter(const json_t* j){
     iter = malloc(sizeof(json_iterator_t));
     if(!iter) return NULL;
 
-    iter->h_iter = h_iter(j->hash_table);
+    iter->p_iter = p_iter(j->hash_table);
 
     return iter;
 }
@@ -187,8 +184,9 @@ json_iter(const json_t* j){
 int
 json_next(json_iterator_t* iter, char** k, json_value_t** v){
     void* void_v;
-    h_iter_t* hi = iter->h_iter;
-    if(h_next(hi, k, &void_v)){
+    void* hi = iter->p_iter;
+
+    if(p_next(hi, k, &void_v)){
         free(iter);
         return 1;
     }
@@ -233,29 +231,34 @@ json_value_free(json_value_t* v){
 
 json_t* json_create(){
     json_t* j;
-    h_table_t* ht;
 
     j = malloc(sizeof(json_t));
     if(!j) return NULL;
 
-    j->hash_table = malloc(sizeof(h_table_t));
+    j->hash_table = malloc(sizeof(ptree_t));
     if(!j->hash_table) goto failed;
 
-    h_table_init(j->hash_table);
-    ht = j->hash_table;
-    ht->free = json_value_free_cb;
-
+    ptree_init(j->hash_table);
     return j;
-
-    failed:
+failed:
     free(j);
     return NULL;
 }
 
 void
 json_free(json_t* j){
+    char* k;
+    void* v, *iter;
+
     if(!j) return;
-    h_table_free(j->hash_table);
+
+    iter = p_iter(j->hash_table);
+    while ( p_next(iter, &k, &v) ) {
+        json_value_free_cb(v);
+    }
+
+    ptree_free(j->hash_table);
+    free(iter);
     free(j->hash_table);
     free(j);
 }

@@ -2,7 +2,9 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
-#include <utils/utils.h>
+#include <utils/parser_utils.h>
+#include <utils/ignore_space.h>
+#include <utils/split_str_array.h>
 #include <hash_table.h>
 #include <json.h>
 
