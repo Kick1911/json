@@ -12,6 +12,9 @@ int TAB_CH_COUNT = 4;
 static int
 json_print_value(char*, json_value_t*, int, int);
 
+static void
+json_value_free_cb(void* n);
+
 static int
 count_digits(long int n){
     int c;
@@ -47,6 +50,8 @@ json_clone(const json_t* j){
 
     while(!json_next(iter, &k, &v))
         json_set(n, k, json_value(v->data, v->type));
+
+    json_iter_free(iter);
     return n;
 }
 
@@ -149,7 +154,12 @@ failed_after_fopen:
 }
 
 int
-json_set(json_t* j, const char* key, json_value_t* v){
+json_set(json_t* j, const char* key, json_value_t* v) {
+    void* data;
+
+    if ( (data = json_delete(j->hash_table, key)) )
+        json_value_free_cb(data);
+
     return p_insert(j->hash_table, key, v);
 }
 
@@ -181,15 +191,20 @@ json_iter(const json_t* j){
     return iter;
 }
 
+
+void
+json_iter_free(json_iterator_t* iter) {
+    free(iter->p_iter);
+    free(iter);
+}
+
 int
 json_next(json_iterator_t* iter, char** k, json_value_t** v){
     void* void_v;
     void* hi = iter->p_iter;
 
-    if(p_next(hi, k, &void_v)){
-        free(iter);
+    if( p_next(hi, k, &void_v) )
         return 1;
-    }
     *v = void_v;
     return 0;
 }
@@ -296,6 +311,8 @@ _json_dump(json_t* json, int pretty_print, int level){
     ptr = xmemset(ptr, '\n', pretty_print);
     ptr = xmemset(ptr, TAB_CH, pretty_print * (level - 1) * TAB_CH_COUNT);
     ptr += sprintf(ptr, "}");
+
+    json_iter_free(iter);
     return res;
 }
 
@@ -389,6 +406,7 @@ json_calculate_print_size(json_t* json, int pretty_print){
                     size += (pretty_print)? 1 : 2; /* comma or comma + space */
             }
 
+            json_iter_free(iter);
         }else if(stack->type == JSON_ARRAY){
             int count = 0;
             json_value_t** arr = stack->data;

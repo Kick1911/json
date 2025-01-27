@@ -36,6 +36,7 @@ int json_set(json_t* j, const char* key, json_value_t* v);
 json_value_t* json_get(json_t* j, const char* key);
 json_value_t* json_delete(json_t* j, const char* key);
 json_iterator_t* json_iter(const json_t*);
+void json_iter_free(json_iterator_t*);
 int json_next(json_iterator_t*, char**, json_value_t**);
 size_t json_size(json_t*);
 char* json_dump(json_t*, int);

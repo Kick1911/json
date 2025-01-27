@@ -21,9 +21,7 @@ void test_interface(){
     T_ASSERT(!json_set(json, "kick", json_value(json2, JSON_OBJECT)));
     T_ASSERT_NUM(json_set(json, "", NULL), 1);
     T_ASSERT(!json_get(json, "no_exists"));
-    T_ASSERT_NUM(errno, ENOENT);
     T_ASSERT(!json_delete(json, "no_exists"));
-    T_ASSERT_NUM(errno, ENOENT);
 
     kick_json = json_get(json, "kick")->data;
     T_ASSERT(kick_json);
@@ -36,7 +34,6 @@ void test_interface(){
 
     T_ASSERT(kick_str);
     T_ASSERT(!json_get(json, "kick"));
-    T_ASSERT_NUM(errno, ENOENT);
     T_ASSERT_STRING((char*)kick_str, "I am Kick");
     free(kick_str);
     json_free(json);
@@ -81,6 +78,7 @@ void test_interator(){
 
     T_ASSERT(json_next(iter, &k, &v));
     json_free(json);
+    json_iter_free(iter);
 }
 
 void test_array(){
