@@ -10,7 +10,7 @@ typedef enum {
 } json_type_t;
 
 typedef struct {
-    void* hash_table; /* h_table_t */
+    void* hash_table; /* ptree_t */
 } json_t;
 
 typedef struct {

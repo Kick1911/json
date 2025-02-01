@@ -157,7 +157,7 @@ int
 json_set(json_t* j, const char* key, json_value_t* v) {
     void* data;
 
-    if ( (data = json_delete(j->hash_table, key)) )
+    if ( (data = json_delete(j, key)) )
         json_value_free_cb(data);
 
     return p_insert(j->hash_table, key, v);
