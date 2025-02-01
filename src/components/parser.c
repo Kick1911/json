@@ -161,8 +161,9 @@ json_parse(const char* start, const char* end) {
 
     return json;
 
-    failed:
+failed:
     json_free(json);
+    free(json);
     return NULL;
 }
 

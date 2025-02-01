@@ -234,6 +234,7 @@ json_value_free_cb(void* n) {
         break;
         case JSON_OBJECT:
             json_free(v->data);
+            free(v->data);
         break;
         case JSON_ARRAY: {
             void* ptr;
