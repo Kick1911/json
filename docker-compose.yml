@@ -1,8 +1,0 @@
-version: "3"
-
-services:
-  package:
-    build:
-      context: .
-    volumes:
-      - .:/code
