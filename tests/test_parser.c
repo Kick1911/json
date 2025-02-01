@@ -106,7 +106,7 @@ test_string_value() {
 void
 test_array_value() {
     char test[] = "{ \"kick\":   [{\"a\": 11, \"b\": 5}, \"ness\", 19] \n\n}";
-    void** value;
+    void* value;
     json_t* arr1;
     char*      arr2;
     long int*  arr3;
@@ -117,9 +117,9 @@ test_array_value() {
 
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
-    arr1 = ((json_value_t*)value[0])->data;
-    arr2 = ((json_value_t*)value[1])->data;
-    arr3 = ((json_value_t*)value[2])->data;
+    arr1 = ((json_value_t*)json_get_num(value, 0))->data;
+    arr2 = ((json_value_t*)json_get_num(value, 1))->data;
+    arr3 = ((json_value_t*)json_get_num(value, 2))->data;
     T_ASSERT(arr1);
     T_ASSERT(arr2);
     T_ASSERT(arr3);

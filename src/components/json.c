@@ -5,6 +5,10 @@
 #include <utils/json.h>
 #include <utils/stack.h>
 #include <ptree.h>
+#include <assert.h>
+
+#define JSON_OBJECT_REF(j) (j)->data.hash_table
+#define JSON_ARRAY_REF(j) (j)->data.arr
 
 char TAB_CH = ' ';
 int TAB_CH_COUNT = 4;
@@ -26,6 +30,7 @@ count_digits(long int n) {
     return c;
 }
 
+#if 0
 static json_value_t**
 json_clone_array(json_value_t** ja) {
     size_t count = 0;
@@ -38,9 +43,10 @@ json_clone_array(json_value_t** ja) {
     while ( count-- ) n[count] = json_value(ja[count]->data, ja[count]->type);
     return n;
 }
+#endif
 
 static json_t*
-json_clone(const json_t* j) {
+json_clone(const json_t* j, json_type_t type) {
     void* iter, *n;
     char* k = NULL;
     json_value_t* v = NULL;
@@ -50,7 +56,7 @@ json_clone(const json_t* j) {
     n =  malloc(sizeof(json_t));
     if (!n) return NULL;
 
-    if (json_init(n))
+    if (json_init(n, type))
         goto failed;
 
     while (!json_next(iter, &k, &v))
@@ -73,19 +79,21 @@ make_json_value(void* data, json_type_t type, int by_ref) {
         case JSON_FLOAT:
             size = 7 + count_digits(*((double*)data));
             value = malloc(sizeof(double));
-            if(!value) goto failed;
+            if (!value) goto failed;
             memcpy(value, data, sizeof(double));
         break;
+
         case JSON_NUMERIC:
             size = count_digits(*((long int*)data));
             value = malloc(sizeof(long int));
-            if(!value) goto failed;
+            if (!value) goto failed;
             memcpy(value, data, sizeof(long int));
         break;
+
         case JSON_BOOLEAN:
             size = ((long int)data) ? 4: 5;
             value = malloc(sizeof(char));
-            if(!value) goto failed;
+            if (!value) goto failed;
             memset(value, (long int)data, sizeof(char));
         break;
 
@@ -93,14 +101,13 @@ make_json_value(void* data, json_type_t type, int by_ref) {
             size = 8; /* 6 + 2 for quotes */
             value = NULL;
         break;
+
         case JSON_ARRAY:
-            if(by_ref) value = data;
-            else value = json_clone_array(data);
-        break;
         case JSON_OBJECT:
-            if(by_ref) value = data;
-            else value = json_clone(data);
+            if (by_ref) value = data;
+            else value = json_clone(data, type);
         break;
+
         case JSON_STRING: {
             size = sizeof(char) * (strlen((char*)data) + 1);
             value = malloc(size);
@@ -134,10 +141,10 @@ json_value_ref(void* data, json_type_t type) {
  */
 json_t*
 json_parse_file(const char* file_path) {
+    FILE* f;
     char* str;
     size_t size = 0;
     json_t* json = NULL;
-    FILE* f;
 
     if (!(f = fopen(file_path, "r"))) return NULL;
 
@@ -172,14 +179,34 @@ json_set(json_t* j, const char* key, json_value_t* v) {
     return p_insert(j->hash_table, key, v);
 }
 
+int
+json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
+    void* data;
+
+    if ( (data = json_delete_num(j, key)) )
+        json_value_free_cb(data);
+
+    return p_insert_num(j->hash_table, key, v);
+}
+
 json_value_t*
 json_get(json_t* j, const char* key) {
     return p_lookup(j->hash_table, key);
 }
 
 json_value_t*
+json_get_num(json_t* j, const uint64_t key) {
+    return p_lookup_num(j->hash_table, key);
+}
+
+json_value_t*
 json_delete(json_t* j, const char* key) {
     return p_delete(j->hash_table, key);
+}
+
+json_value_t*
+json_delete_num(json_t* j, const uint64_t key) {
+    return p_delete_num(j->hash_table, key);
 }
 
 size_t
@@ -232,17 +259,10 @@ json_value_free_cb(void* n) {
         case JSON_STRING:
             free(v->data);
         break;
+        case JSON_ARRAY:
         case JSON_OBJECT:
             json_free(v->data);
             free(v->data);
-        break;
-        case JSON_ARRAY: {
-            void* ptr;
-            json_value_t** arr = v->data;
-            while ( (ptr = *arr++) )
-                json_value_free(ptr);
-            free(v->data);
-        }
         break;
     }
     free(v);
@@ -254,13 +274,15 @@ json_value_free(json_value_t* v) {
 }
 
 int
-json_init(json_t* j) {
+json_init(json_t* j, json_type_t type) {
+    assert(type == JSON_OBJECT || type == JSON_ARRAY);
+
+    j->type = type;
     j->hash_table = calloc(1, sizeof(ptree_t));
     if (!j->hash_table) goto failed;
 
     return ptree_init(j->hash_table);
 failed:
-    free(j);
     return 2;
 }
 
@@ -271,15 +293,6 @@ json_free(json_t* j) {
 
     if (!j) return;
 
-    /* if (j->type == JSON_ARRAY) {
-        json_value_t** ptr = j->data.arr;
-        while ( *ptr ) {
-            json_value_free_cb(*ptr);
-        }
-        free(j->data.arr);
-        return;
-    } */
-
     iter = p_iter(j->hash_table);
     while ( !p_next(iter, &k, &v) ) {
         json_value_free_cb(v);
@@ -288,17 +301,6 @@ json_free(json_t* j) {
     ptree_free(j->hash_table);
     free(iter);
     free(j->hash_table);
-}
-
-json_value_t**
-json_array(size_t s) {
-    json_value_t** a;
-
-    a = malloc(sizeof(json_value_t*) * (s + 1));
-    if (!a) return NULL;
-
-    a[s] = NULL;
-    return a;
 }
 
 char*
@@ -344,7 +346,7 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
             return sprintf(buf, "%s", (*((unsigned char*)v->data) ? "true" : "false"));
         case JSON_STRING:
             return sprintf(buf, "\"%s\"", (char*)v->data);
-        case JSON_OBJECT:{
+        case JSON_OBJECT: {
             int size = 0;
             char* res = _json_dump(v->data, pretty_print, level + 1);
             size = sprintf(buf, "%s", res);
@@ -352,7 +354,7 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
             return size;
         }
 
-        case JSON_ARRAY:{
+        case JSON_ARRAY: {
             void* ptr;
             char* buf_start = buf;
             json_value_t** arr = v->data;
