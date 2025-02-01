@@ -10,21 +10,27 @@ typedef enum {
 } json_type_t;
 
 typedef struct {
+    json_type_t type;
+    size_t size;
+    void* data;
+} json_value_t;
+
+typedef struct {
+    json_type_t type;
+
     void* hash_table; /* ptree_t */
+    /* union {
+        void* hash_table;
+        json_value_t** arr;
+    } data; */
 } json_t;
 
 typedef struct {
     void* p_iter; /* h_iter_t */
 } json_iterator_t;
 
-typedef struct {
-    json_type_t type;
-    size_t size;
-    void* data;
-} json_value_t;
-
-json_t*
-json_create();
+int
+json_init(json_t*);
 
 void
 json_free(json_t*);

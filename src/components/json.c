@@ -46,13 +46,22 @@ json_clone(const json_t* j) {
     json_value_t* v = NULL;
 
     iter = json_iter(j);
-    n = json_create();
+
+    n =  malloc(sizeof(json_t));
+    if (!n) return NULL;
+
+    if (json_init(n))
+        goto failed;
 
     while (!json_next(iter, &k, &v))
         json_set(n, k, json_value(v->data, v->type));
 
     json_iter_free(iter);
     return n;
+
+failed:
+    free(n);
+    return NULL;
 }
 
 static json_value_t*
@@ -243,20 +252,15 @@ json_value_free(json_value_t* v) {
     json_value_free_cb(v);
 }
 
-json_t* json_create() {
-    json_t* j;
-
-    j = malloc(sizeof(json_t));
-    if (!j) return NULL;
-
+int
+json_init(json_t* j) {
     j->hash_table = calloc(1, sizeof(ptree_t));
     if (!j->hash_table) goto failed;
 
-    ptree_init(j->hash_table);
-    return j;
+    return ptree_init(j->hash_table);
 failed:
     free(j);
-    return NULL;
+    return 2;
 }
 
 void
@@ -266,6 +270,15 @@ json_free(json_t* j) {
 
     if (!j) return;
 
+    /* if (j->type == JSON_ARRAY) {
+        json_value_t** ptr = j->data.arr;
+        while ( *ptr ) {
+            json_value_free_cb(*ptr);
+        }
+        free(j->data.arr);
+        return;
+    } */
+
     iter = p_iter(j->hash_table);
     while ( !p_next(iter, &k, &v) ) {
         json_value_free_cb(v);
@@ -274,7 +287,6 @@ json_free(json_t* j) {
     ptree_free(j->hash_table);
     free(iter);
     free(j->hash_table);
-    free(j);
 }
 
 json_value_t**

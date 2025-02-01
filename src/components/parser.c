@@ -127,11 +127,16 @@ json_value_parse(const char* s, const char** end, void** value){
 }
 
 json_t*
-json_parse(const char* start, const char* end){
+json_parse(const char* start, const char* end) {
     const char* s = start, *e = end, *value_end = NULL;
     json_type_t ret;
-    json_t* json = json_create();
+    json_t* json;
+
+    json = malloc(sizeof(json_t));
     if(!json) return NULL;
+
+    if (json_init(json))
+        return NULL;
 
     while( (s = strchr(s, '"')) && s < e ){
         char key[255] = {0};

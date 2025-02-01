@@ -13,6 +13,7 @@ test_integer_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 19);
     json_free(json);
+    free(json);
 }
 
 void
@@ -24,6 +25,7 @@ test_float_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT_FLOAT(*value, 3.1411165464);
     json_free(json);
+    free(json);
 }
 
 void
@@ -35,6 +37,7 @@ test_null_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT(!value);
     json_free(json);
+    free(json);
 }
 
 void
@@ -47,6 +50,7 @@ test_integer_and_null_value() {
     T_ASSERT_NUM(*value, 19);
     T_ASSERT(!json_get(json, "a")->data);
     json_free(json);
+    free(json);
 }
 
 void
@@ -58,6 +62,7 @@ test_true_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 1);
     json_free(json);
+    free(json);
 }
 
 void
@@ -69,6 +74,7 @@ test_false_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 0);
     json_free(json);
+    free(json);
 }
 
 void
@@ -82,6 +88,7 @@ test_object_value() {
     value2 = json_get(value, "a")->data;
     T_ASSERT_NUM(*value2, 11);
     json_free(json);
+    free(json);
 }
 
 void
@@ -93,6 +100,7 @@ test_string_value() {
     value = json_get(json, "kick")->data;
     T_ASSERT_STRING(value, "ness \\\" ");
     json_free(json);
+    free(json);
 }
 
 void
@@ -122,6 +130,7 @@ test_array_value() {
     T_ASSERT_STRING(arr2, "ness");
     T_ASSERT_NUM(*arr3, 19);
     json_free(json);
+    free(json);
 }
 
 void
@@ -155,6 +164,7 @@ test_json_files() {
     T_ASSERT_NUM(json_size(ptr), 2);
 
     json_free(json);
+    free(json);
 }
 
 int main(void){
