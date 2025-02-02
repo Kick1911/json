@@ -190,6 +190,11 @@ json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
     return p_insert_num(j->hash_table, key, v);
 }
 
+int
+json_arr_append(json_t* j, json_value_t* v) {
+    return json_set_num(j, json_size(j), v);
+}
+
 json_value_t*
 json_get(json_t* j, const char* key) {
     return p_lookup(j->hash_table, key);

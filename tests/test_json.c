@@ -96,8 +96,8 @@ void test_array(){
      *          json_value(&f, JSON_FLOAT),
      *          NULL};
      */
-    json_set_num(&json, 0, json_value(str, JSON_STRING));
-    json_set_num(&json, 1, json_value(&f, JSON_FLOAT));
+    json_arr_append(&json, json_value(str, JSON_STRING));
+    json_arr_append(&json, json_value(&f, JSON_FLOAT));
 
     T_ASSERT_STRING((char*)json_get_num(&json, 0)->data, "I am Kick");
     T_ASSERT_DOUBLE(*((double*)json_get_num(&json, 1)->data), 3.14);
