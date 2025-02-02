@@ -312,20 +312,30 @@ _json_dump(json_t* json, int pretty_print, int level) {
     char* res = malloc(sizeof(char) * (size + 9));
     void* iter = json_iter(json);
     char* ptr = res, *k;
+    char border[2] = "{}";
 
+    if (json->type == JSON_ARRAY) {
+        border[0] = '[';
+        border[1] = ']';
+    }
+
+    *ptr++ = border[0];
     i_keys = json_size(json);
-    ptr += sprintf(ptr, "{");
     while (!json_next(iter, &k, &v)) {
         ptr = xmemset(ptr, '\n', pretty_print);
         ptr = xmemset(ptr, TAB_CH, pretty_print * level * TAB_CH_COUNT);
-        ptr += sprintf(ptr, "\"%s\": ", k);
+
+        if (json->type ==  JSON_OBJECT)
+            ptr += sprintf(ptr, "\"%s\": ", k);
+
         ptr += json_print_value(ptr, v, pretty_print, level);
         if (--i_keys)
-            ptr += sprintf(ptr, ",%s", (pretty_print)?"":" ");
+            ptr += sprintf(ptr, ",%s", (pretty_print) ? "" : " ");
     }
     ptr = xmemset(ptr, '\n', pretty_print);
     ptr = xmemset(ptr, TAB_CH, pretty_print * (level - 1) * TAB_CH_COUNT);
-    ptr += sprintf(ptr, "}");
+    *ptr++ = border[1];
+    *ptr = 0;
 
     json_iter_free(iter);
     return res;
@@ -396,7 +406,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
     STACK_INIT(json_value_t*, json, 255);
     STACK_INIT(int, level, 255);
 
-    json_wrap = json_value_ref(json, JSON_OBJECT);
+    json_wrap = json_value_ref(json, json->type);
 
     STACK_PUSH(json, json_wrap);
     STACK_PUSH(level, 1);
