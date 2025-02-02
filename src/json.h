@@ -1,6 +1,7 @@
 #ifndef _JSON_H
 #define _JSON_H
 
+#include <stdint.h>
 #include <stddef.h>
 
 typedef enum {
@@ -17,12 +18,7 @@ typedef struct {
 
 typedef struct {
     json_type_t type;
-
     void* hash_table; /* ptree_t */
-    /* union {
-        void* hash_table;
-        json_value_t** arr;
-    } data; */
 } json_t;
 
 typedef struct {
@@ -30,7 +26,7 @@ typedef struct {
 } json_iterator_t;
 
 int
-json_init(json_t*);
+json_init(json_t*, json_type_t);
 
 void
 json_free(json_t*);
@@ -56,11 +52,20 @@ json_value_ref(void* data, json_type_t);
 int
 json_set(json_t* j, const char* key, json_value_t* v);
 
+int
+json_set_num(json_t* j, const uint64_t key, json_value_t* v);
+
 json_value_t*
 json_get(json_t* j, const char* key);
 
 json_value_t*
+json_get_num(json_t* j, const uint64_t key);
+
+json_value_t*
 json_delete(json_t* j, const char* key);
+
+json_value_t*
+json_delete_num(json_t* j, const uint64_t key);
 
 json_iterator_t*
 json_iter(const json_t*);
