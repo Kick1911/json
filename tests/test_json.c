@@ -84,38 +84,41 @@ void test_interator(){
 }
 
 void test_array(){
+    char* res;
     json_t json;
-    json_t* arr_out, *arr;
     double f = 3.14;
     char str[] = "I am Kick";
 
-    arr = malloc(sizeof(json_t));
-    T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
-    T_ASSERT_NUM(json_init(arr, JSON_OBJECT), 0);
+    T_ASSERT_NUM(json_init(&json, JSON_ARRAY), 0);
 
     /** C99
      * arr[3] = {json_value(str, JSON_STRING),
      *          json_value(&f, JSON_FLOAT),
      *          NULL};
      */
-    json_set_num(arr, 0, json_value(str, JSON_STRING));
-    json_set_num(arr, 1, json_value(&f, JSON_FLOAT));
-    json_set(&json, "a", json_value_ref(arr, JSON_ARRAY));
-    arr_out = json_get(&json, "a")->data;
+    json_set_num(&json, 0, json_value(str, JSON_STRING));
+    json_set_num(&json, 1, json_value(&f, JSON_FLOAT));
 
-    T_ASSERT(arr_out);
-    T_ASSERT_STRING((char*)json_get_num(arr_out, 0)->data, "I am Kick");
-    T_ASSERT_DOUBLE(*((double*)json_get_num(arr_out, 1)->data), 3.14);
+    T_ASSERT_STRING((char*)json_get_num(&json, 0)->data, "I am Kick");
+    T_ASSERT_DOUBLE(*((double*)json_get_num(&json, 1)->data), 3.14);
+
+    /* [                        2 char
+     *     "I am Kick",         17 char
+     *     3.14                 9 char
+     * ]                        1 char, total: 29
+     */
+    res = json_dump(&json, 1);
+    T_ASSERT_STRING(res, "[\n    \"I am Kick\",\n    3.140000\n]");
+    T_ASSERT_NUM(json_calculate_print_size(&json, 1), strlen(res));
+    free(res);
+
+    /* ["I am Kick", 3.140000] */
+    res = json_dump(&json, 0);
+    T_ASSERT_STRING(res, "[\"I am Kick\", 3.140000]");
+    T_ASSERT_NUM(json_calculate_print_size(&json, 0), strlen(res));
+    free(res);
 
     json_free(&json);
-}
-
-void
-test_calculate_print_size() {
-}
-
-void
-test_blob() {
 }
 
 void
@@ -126,7 +129,7 @@ suite_json_dump() {
     double f = 3.14;
     char str[] = "I am Kick";
 
-    arr = malloc(sizeof(json_t)); /* FIXME: Must use malloc because of json_value_ref?? */
+    arr = malloc(sizeof(json_t));
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(arr, JSON_ARRAY), 0);
