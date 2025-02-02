@@ -8,9 +8,6 @@
 #include <ptree.h>
 #include <assert.h>
 
-#define JSON_OBJECT_REF(j) (j)->data.hash_table
-#define JSON_ARRAY_REF(j) (j)->data.arr
-
 char TAB_CH = ' ';
 int TAB_CH_COUNT = 4;
 
@@ -30,21 +27,6 @@ count_digits(long int n) {
     while ( (n = n/10) ) c++;
     return c;
 }
-
-#if 0
-static json_value_t**
-json_clone_array(json_value_t** ja) {
-    size_t count = 0;
-    json_value_t** n, **ptr = ja;
-
-    while (*ptr++) count++;
-    n = malloc(sizeof(void*) * (count+1));
-    n[count] = NULL;
-
-    while ( count-- ) n[count] = json_value(ja[count]->data, ja[count]->type);
-    return n;
-}
-#endif
 
 static json_t*
 json_clone(const json_t* j, json_type_t type) {
@@ -174,7 +156,9 @@ int
 json_set(json_t* j, const char* key, json_value_t* v) {
     void* data;
 
-    if ( (data = json_delete(j, key)) )
+    assert(j->type == JSON_OBJECT);
+
+    if ( (data = json_delete(j, key)) ) /* FIXME: Optimise this */
         json_value_free_cb(data);
 
     return p_insert(j->hash_table, key, v);
@@ -184,7 +168,7 @@ int
 json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
     void* data;
 
-    if ( (data = json_delete_num(j, key)) )
+    if ( (data = json_delete_num(j, key)) ) /* FIXME: Optimise this */
         json_value_free_cb(data);
 
     return p_insert_num(j->hash_table, key, v);
@@ -192,6 +176,7 @@ json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
 
 int
 json_arr_append(json_t* j, json_value_t* v) {
+    assert(j->type == JSON_ARRAY);
     return json_set_num(j, json_size(j), v);
 }
 
@@ -217,6 +202,7 @@ json_delete_num(json_t* j, const uint64_t key) {
 
 json_value_t*
 json_arr_pop(json_t* j) {
+    assert(j->type == JSON_ARRAY);
     return json_delete_num(j, json_size(j) - 1);
 }
 
