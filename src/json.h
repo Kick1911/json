@@ -59,6 +59,9 @@ int
 json_arr_append(json_t* j, json_value_t* v);
 
 json_value_t*
+json_arr_pop(json_t* j);
+
+json_value_t*
 json_get(json_t* j, const char* key);
 
 json_value_t*

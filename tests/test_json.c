@@ -85,6 +85,7 @@ void test_interator(){
 
 void test_array(){
     char* res;
+    json_value_t* value;
     json_t json;
     double f = 3.14;
     char str[] = "I am Kick";
@@ -98,9 +99,6 @@ void test_array(){
      */
     json_arr_append(&json, json_value(str, JSON_STRING));
     json_arr_append(&json, json_value(&f, JSON_FLOAT));
-
-    T_ASSERT_STRING((char*)json_get_num(&json, 0)->data, "I am Kick");
-    T_ASSERT_DOUBLE(*((double*)json_get_num(&json, 1)->data), 3.14);
 
     /* [                        2 char
      *     "I am Kick",         17 char
@@ -117,6 +115,18 @@ void test_array(){
     T_ASSERT_STRING(res, "[\"I am Kick\", 3.140000]");
     T_ASSERT_NUM(json_calculate_print_size(&json, 0), strlen(res));
     free(res);
+
+    T_ASSERT_NUM(json_size(&json), 2);
+
+    value = json_arr_pop(&json);
+    T_ASSERT_DOUBLE(*((double*)value->data), 3.14);
+    json_value_free(value);
+    T_ASSERT_NUM(json_size(&json), 1);
+
+    value = json_arr_pop(&json);
+    T_ASSERT_STRING((char*)value->data, "I am Kick");
+    json_value_free(value);
+    T_ASSERT_NUM(json_size(&json), 0);
 
     json_free(&json);
 }

@@ -215,6 +215,11 @@ json_delete_num(json_t* j, const uint64_t key) {
     return p_delete_num(j->hash_table, key);
 }
 
+json_value_t*
+json_arr_pop(json_t* j) {
+    return json_delete_num(j, json_size(j) - 1);
+}
+
 size_t
 json_size(json_t* j) {
     return p_size(j->hash_table);
