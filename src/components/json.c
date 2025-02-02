@@ -4,6 +4,7 @@
 #include <json.h>
 #include <utils/json.h>
 #include <utils/stack.h>
+#include <utils/xstrrchr.h>
 #include <ptree.h>
 #include <assert.h>
 
@@ -355,23 +356,26 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
         }
 
         case JSON_ARRAY: {
-            void* ptr;
+            char* key;
+            json_value_t* value;
             char* buf_start = buf;
-            json_value_t** arr = v->data;
+            json_t* arr = v->data;
+            void* iter = json_iter(arr);
 
             buf += sprintf(buf, "[");
             buf = xmemset(buf, '\n', pretty_print);
             buf = xmemset(buf, TAB_CH, pretty_print * (level + 1) * TAB_CH_COUNT);
-            while ( (ptr = *arr++) ) {
-                buf += json_print_value(buf, ptr, pretty_print, level + 1);
-                if(*arr){
-                    buf += sprintf(buf, ",%c", (pretty_print) ? '\n' : ' ');
-                    buf = xmemset(buf, TAB_CH, pretty_print * (level + 1) * TAB_CH_COUNT);
-                }
+            while ( !json_next(iter, &key, &value) ) {
+                buf += json_print_value(buf, value, pretty_print, level + 1);
+                buf += sprintf(buf, ",%c", (pretty_print) ? '\n' : ' ');
+                buf = xmemset(buf, TAB_CH, pretty_print * (level + 1) * TAB_CH_COUNT);
             }
+            buf = xstrrchr(buf_start, buf - 1, ','); /* Remove the extra decoration */
             buf = xmemset(buf, '\n', pretty_print);
             buf = xmemset(buf, TAB_CH, pretty_print * level * TAB_CH_COUNT);
             buf += sprintf(buf, "]");
+
+            json_iter_free(iter);
             return buf - buf_start;
         }
     }
@@ -404,7 +408,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
             int count = 0;
             iter = json_iter(stack->data);
 
-            while (!json_next(iter, &k, &v)) {
+            while ( !json_next(iter, &k, &v) ) {
                 switch(v->type) {
                     case JSON_ARRAY:
                     case JSON_OBJECT:
@@ -423,14 +427,17 @@ json_calculate_print_size(json_t* json, int pretty_print) {
             json_iter_free(iter);
         } else if (stack->type == JSON_ARRAY) {
             int count = 0;
-            json_value_t** arr = stack->data;
-            while ( (v = *arr++) ) {
+            json_t* arr = stack->data;
+            void* iter = json_iter(arr);
+
+            while ( !json_next(iter, &k, &v) ) {
                 switch(v->type){
                     case JSON_ARRAY:
                     case JSON_OBJECT:
                         STACK_PUSH(json, v);
                         STACK_PUSH(level, level + 1);
                     break;
+
                     default:
                         size += v->size;
                         size += (pretty_print) ? TAB_CH_COUNT*level + 1 : 0; /* tab/space */
@@ -438,6 +445,8 @@ json_calculate_print_size(json_t* json, int pretty_print) {
                 if (count++)
                     size += (pretty_print)? 1 : 2; /* comma or comma + space */
             }
+
+            json_iter_free(iter);
         }
     }
     free(json_wrap);
