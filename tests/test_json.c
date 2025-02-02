@@ -104,8 +104,8 @@ void test_array(){
 
     /* [                        2 char
      *     "I am Kick",         17 char
-     *     3.14                 9 char
-     * ]                        1 char, total: 29
+     *     3.140000             13 char
+     * ]                        1 char, total: 33
      */
     res = json_dump(&json, 1);
     T_ASSERT_STRING(res, "[\n    \"I am Kick\",\n    3.140000\n]");
