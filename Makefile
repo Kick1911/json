@@ -33,11 +33,22 @@ static_library: dep ${ARCHIVE_FILES}
 ${ARCHIVE_FILES}: set_pie ${DEP_PACKAGE_PATHS} ${COMP_O} ${UTILS_O}
 	${call print,${BROWN}AR $@}
 	${eval DEP_ARCHIVES = ${shell find ${DEP_PACKAGE_PATHS} -name '*.a'}}
-	${eval OBJECT_FILES = ${filter %.o,$^}}
 	${Q}for arch in ${DEP_ARCHIVES} ; do \
 		ar x $$arch --output `dirname $$arch` ; \
 	done
-	${Q}ar -cq $@ ${OBJECT_FILES} `find ${DEP_PACKAGE_PATHS} -name '*.o'`
+
+	${eval DEP_OBJECT_FILES := `find ${DEP_PACKAGE_PATHS} -name '*.o'`}
+	${eval OBJECT_FILES := ${filter %.o,$^} ${DEP_OBJECT_FILES}}
+
+	${Q}for obj in ${DEP_OBJECT_FILES}; do \
+		for symbol in `nm --defined-only -j -g $$obj` ; do \
+			salt=`tr -dc 'A-Za-z0-9' </dev/urandom | head -c 4` ; \
+			for x in ${OBJECT_FILES} ; do \
+				objcopy --redefine-sym $$symbol="${APP_NAME}_$$salt$$symbol" $$x ; \
+			done \
+		done \
+	done
+	${Q}ar -cq $@ ${OBJECT_FILES}
 
 set_pic:
 	${eval CFLAGS += -fPIC}
@@ -60,7 +71,7 @@ dep: ${GITLAB_DEP} preprocess
 test_compile: set_debug_vars dep ${TESTS_OUT}
 
 test: test_compile
-	@for exe in $(TESTS_OUT) ; do \
+	${Q}for exe in $(TESTS_OUT) ; do \
 		valgrind --error-exitcode=1 --leak-check=full $$exe ; \
 		if [ $$? -ne 0 ]; then return 1; fi; \
 	done

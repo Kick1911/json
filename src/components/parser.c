@@ -7,7 +7,7 @@
 #include <utils/split_str_array.h>
 #include <json.h>
 
-json_type_t
+static json_type_t
 json_value_parse(const char* s, const char** end, void** value) {
     char str[255];
     size_t length = 0;

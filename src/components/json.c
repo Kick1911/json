@@ -8,8 +8,8 @@
 #include <ptree.h>
 #include <assert.h>
 
-char TAB_CH = ' ';
-int TAB_CH_COUNT = 4;
+static char TAB_CH = ' ';
+static int TAB_CH_COUNT = 4;
 
 static int
 json_print_value(char*, json_value_t*, int, int);
@@ -300,7 +300,7 @@ json_free(json_t* j) {
     free(j->hash_table);
 }
 
-char*
+static char*
 _json_dump(json_t* json, int pretty_print, int level) {
     json_value_t* v;
     int i_keys;
