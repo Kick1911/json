@@ -8,6 +8,8 @@
 #include <ptree.h>
 #include <assert.h>
 
+#define DEPTH_LIMIT 255
+
 static char TAB_CH = ' ';
 static int TAB_CH_COUNT = 4;
 
@@ -21,7 +23,7 @@ static int
 count_digits(long int n) {
     int c;
 
-    if(!n) return 0;
+    if(!n) return 1;
 
     c = 1;
     while ( (n = n/10) ) c++;
@@ -305,7 +307,7 @@ _json_dump(json_t* json, int pretty_print, int level) {
     json_value_t* v;
     int i_keys;
     size_t size = json_calculate_print_size(json, pretty_print);
-    char* res = malloc(sizeof(char) * (size + 9));
+    char* res = malloc(sizeof(char) * (size + 90));
     void* iter = json_iter(json);
     char* ptr = res, *k;
     char border[2] = "{}";
@@ -399,8 +401,8 @@ json_calculate_print_size(json_t* json, int pretty_print) {
     size_t size = 0;
     json_value_t* v, *stack;
     void* iter, *json_wrap;
-    STACK_INIT(json_value_t*, json, 255);
-    STACK_INIT(int, level, 255);
+    STACK_INIT(json_value_t*, json, DEPTH_LIMIT);
+    STACK_INIT(int, level, DEPTH_LIMIT);
 
     json_wrap = json_value_ref(json, json->type);
 
@@ -409,7 +411,8 @@ json_calculate_print_size(json_t* json, int pretty_print) {
     while ( (stack = STACK_POP(json, NULL)) ) {
         int level = STACK_POP(level, 0);
 
-        size += (pretty_print) ? 2 + (level-1)*TAB_CH_COUNT + 1: 2; /* 2 brackets*/
+        size += (pretty_print) ? 2 + (level-1) * TAB_CH_COUNT * 2 + 1: 2; /* 2 brackets*/
+
         if (stack->type == JSON_OBJECT) {
             int count = 0;
             iter = json_iter(stack->data);
@@ -425,9 +428,9 @@ json_calculate_print_size(json_t* json, int pretty_print) {
                     default:
                         size += strlen(k) + v->size;
                 }
-                size += ((pretty_print)?TAB_CH_COUNT*level + 1:0) + 4; /* tab/space + key + 2 quotes + 1 colon + 1 space */
+                size += ((pretty_print) ? TAB_CH_COUNT * level + 1 : 0) + 4; /* tab/space + newline + key + 2 quotes + 1 colon + 1 space */
                 if (count++)
-                    size += (pretty_print)? 1 : 2; /* comma or comma + space */
+                    size += (pretty_print) ? 1 : 2; /* comma or comma + space */
             }
 
             json_iter_free(iter);
@@ -446,8 +449,9 @@ json_calculate_print_size(json_t* json, int pretty_print) {
 
                     default:
                         size += v->size;
-                        size += (pretty_print) ? TAB_CH_COUNT*level + 1 : 0; /* tab/space */
+                        size += (pretty_print) ? TAB_CH_COUNT * level : 0; /* tab/space + newline */
                 }
+                if (pretty_print) size += 1; /* newline */
                 if (count++)
                     size += (pretty_print)? 1 : 2; /* comma or comma + space */
             }

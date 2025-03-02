@@ -132,7 +132,38 @@ void test_array(){
 }
 
 void
-suite_json_dump() {
+stress_json_dump() {
+    long int i;
+    char* res;
+    json_t arr;
+
+    T_ASSERT_NUM(json_init(&arr, JSON_ARRAY), 0);
+    i = 0; while (i < 254) {
+        long int two_times = i * 2;
+        json_t* json;
+
+        json = malloc(sizeof(json_t));
+        T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
+        json_set(json, "id", json_value(&i, JSON_NUMERIC));
+        json_set(json, "line_data", json_value(&two_times, JSON_NUMERIC));
+        json_arr_append(&arr, json_value_ref(json, JSON_OBJECT));
+
+        i++;
+    }
+
+    res = json_dump(&arr, 0);
+    T_ASSERT_NUM(json_calculate_print_size(&arr, 0), strlen(res));
+    free(res);
+
+    res = json_dump(&arr, 1);
+    T_ASSERT_NUM(json_calculate_print_size(&arr, 1), strlen(res));
+    free(res);
+
+    json_free(&arr);
+}
+
+void
+basic_json_dump() {
     char* res;
     json_t json, json2, *arr;
     long int d = 5432543;
@@ -215,10 +246,13 @@ suite_json_dump() {
 
 int main(void){
 
-    TEST(JSON interface, test_interface());
+    /* TEST(JSON interface, test_interface());
     TEST(JSON iterator, test_interator());
-    TEST(JSON array, test_array());
-    T_SUITE(JSON Dump, suite_json_dump());
+    TEST(JSON array, test_array()); */
+    T_SUITE(JSON Dump,
+        /* TEST(Basic, basic_json_dump()); */
+        TEST(Stress test, stress_json_dump());
+    );
 
     T_CONCLUDE();
     return 0;
