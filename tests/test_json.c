@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <malloc.h>
 #include <errno.h>
 #include <json.h>
@@ -136,9 +137,13 @@ stress_json_dump() {
     long int i;
     char* res;
     json_t arr;
+    clock_t start_time, end_time;
+    double time_spent;
 
     T_ASSERT_NUM(json_init(&arr, JSON_ARRAY), 0);
-    i = 0; while (i < 1000) {
+
+    start_time = clock();
+    i = 0; while (i < 10000) {
         long int two_times = i * 2;
         json_t* json;
 
@@ -150,16 +155,36 @@ stress_json_dump() {
 
         i++;
     }
+    end_time = clock();
+    time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("Time taken adding keys: %f seconds\n", time_spent);
 
+    start_time = clock();
     res = json_dump(&arr, 0);
+
+    end_time = clock();
+    time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("Time taken json_dump(0): %f seconds\n", time_spent);
+
     T_ASSERT_NUM(json_calculate_print_size(&arr, 0), strlen(res));
     free(res);
 
+    start_time = clock();
     res = json_dump(&arr, 1);
+
+    end_time = clock();
+    time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("Time taken json_dump(1): %f seconds\n", time_spent);
+
     T_ASSERT_NUM(json_calculate_print_size(&arr, 1), strlen(res));
     free(res);
 
+    start_time = clock();
     json_free(&arr);
+
+    end_time = clock();
+    time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("Time taken json_free(): %f seconds\n", time_spent);
 }
 
 void
