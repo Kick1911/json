@@ -6,9 +6,13 @@
 #include <utils/stack.h>
 #include <utils/xstrrchr.h>
 #include <ptree.h>
+#include <dlinked_list.h>
 #include <assert.h>
 
-#define DEPTH_LIMIT 255
+struct json_stack_unit {
+    json_value_t* v;
+    int depth;
+};
 
 static char TAB_CH = ' ';
 static int TAB_CH_COUNT = 4;
@@ -399,57 +403,64 @@ size_t
 json_calculate_print_size(json_t* json, int pretty_print) {
     char* k;
     size_t size = 0;
-    json_value_t* v, *stack;
+    json_value_t* v;
     void* iter, *json_wrap;
-    STACK_INIT(json_value_t*, json, DEPTH_LIMIT);
-    STACK_INIT(int, level, DEPTH_LIMIT);
+    dl_list_t dl;
+    struct json_stack_unit* unit, *stack;
 
+    dl_init(&dl);
     json_wrap = json_value_ref(json, json->type);
 
-    STACK_PUSH(json, json_wrap);
-    STACK_PUSH(level, 1);
-    while ( (stack = STACK_POP(json, NULL)) ) {
-        int level = STACK_POP(level, 0);
+    unit = malloc(sizeof(struct json_stack_unit));
+    unit->v = json_wrap;
+    unit->depth = 1;
 
-        size += (pretty_print) ? 2 + (level-1) * TAB_CH_COUNT * 2 + 1: 2; /* 2 brackets*/
+    dl_push(&dl, unit);
+    while ( (stack = dl_pop(&dl)) ) {
+        size += (pretty_print) ? 2 + (stack->depth - 1) * TAB_CH_COUNT * 2 + 1: 2; /* 2 brackets*/
 
-        if (stack->type == JSON_OBJECT) {
+        if (stack->v->type == JSON_OBJECT) {
             int count = 0;
-            iter = json_iter(stack->data);
+            iter = json_iter(stack->v->data);
 
             while ( !json_next(iter, &k, &v) ) {
                 switch(v->type) {
                     case JSON_ARRAY:
                     case JSON_OBJECT:
-                        STACK_PUSH(json, v);
-                        STACK_PUSH(level, level + 1);
+                        unit = malloc(sizeof(struct json_stack_unit));
+                        unit->v = v;
+                        unit->depth = stack->depth + 1;
+                        dl_push(&dl, unit);
+
                         size += strlen(k);
                     break;
                     default:
                         size += strlen(k) + v->size;
                 }
-                size += ((pretty_print) ? TAB_CH_COUNT * level + 1 : 0) + 4; /* tab/space + newline + key + 2 quotes + 1 colon + 1 space */
+                size += ((pretty_print) ? TAB_CH_COUNT * stack->depth + 1 : 0) + 4; /* tab/space + newline + key + 2 quotes + 1 colon + 1 space */
                 if (count++)
                     size += (pretty_print) ? 1 : 2; /* comma or comma + space */
             }
 
             json_iter_free(iter);
-        } else if (stack->type == JSON_ARRAY) {
+        } else if (stack->v->type == JSON_ARRAY) {
             int count = 0;
-            json_t* arr = stack->data;
+            json_t* arr = stack->v->data;
             void* iter = json_iter(arr);
 
             while ( !json_next(iter, &k, &v) ) {
                 switch(v->type){
                     case JSON_ARRAY:
                     case JSON_OBJECT:
-                        STACK_PUSH(json, v);
-                        STACK_PUSH(level, level + 1);
+                        unit = malloc(sizeof(struct json_stack_unit));
+                        unit->v = v;
+                        unit->depth = stack->depth + 1;
+                        dl_push(&dl, unit);
                     break;
 
                     default:
                         size += v->size;
-                        size += (pretty_print) ? TAB_CH_COUNT * level : 0; /* tab/space + newline */
+                        size += (pretty_print) ? TAB_CH_COUNT * stack->depth : 0; /* tab/space + newline */
                 }
                 if (pretty_print) size += 1; /* newline */
                 if (count++)
@@ -458,6 +469,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
 
             json_iter_free(iter);
         }
+        free(stack);
     }
     free(json_wrap);
     return size;
