@@ -94,13 +94,19 @@ test_object_value() {
 void
 test_string_value() {
     char test[] = "{ \"kick\":   \"ness \\\" \" \n\n}";
-    char* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    char* value, *str;
+    json_t* json;
+    size_t size = sizeof(test)/sizeof(test[0]) - 1;
+
+    str = malloc(sizeof(char) * size);
+    strncpy(str, test, size);
+    json = json_parse(str, str + size);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_STRING(value, "ness \\\" ");
     json_free(json);
     free(json);
+    free(str);
 }
 
 void

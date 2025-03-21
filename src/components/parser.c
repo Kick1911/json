@@ -5,6 +5,7 @@
 #include <utils/parser_utils.h>
 #include <utils/ignore_space.h>
 #include <utils/split_str_array.h>
+#include <utils/xstrchr.h>
 #include <json.h>
 
 static json_type_t
@@ -165,11 +166,13 @@ json_parse(const char* start, const char* end) {
     if (json_init(json, JSON_OBJECT))
         return NULL;
 
-    while ( (s = strchr(s, '"')) && s < e ) {
+    while ( (s = xstrchr(s, e, '"')) && s < e ) {
+        char* end_quote;
         char key[255] = {0};
         void* value = NULL;
 
-        sscanf(s + 1, "%[^\"]", key);
+        end_quote = xstrchr(s + 1, e, '"');
+        strncpy(key, s + 1, end_quote - (s + 1));
         s += strlen(key);
         s = strchr(s, ':');
         s = ignore_space(s + 1);
