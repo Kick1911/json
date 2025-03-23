@@ -21,10 +21,6 @@ typedef struct {
     void* hash_table; /* ptree_t */
 } json_t;
 
-typedef struct {
-    void* p_iter; /* h_iter_t */
-} json_iterator_t;
-
 int
 json_init(json_t*, json_type_t);
 
@@ -73,14 +69,14 @@ json_delete(json_t* j, const char* key);
 json_value_t*
 json_delete_num(json_t* j, const uint64_t key);
 
-json_iterator_t*
+void*
 json_iter(const json_t*, const char*, size_t);
 
 void
-json_iter_free(json_iterator_t*);
+json_iter_free(void*);
 
 int
-json_next(json_iterator_t*, char**, json_value_t**);
+json_next(void*, char**, json_value_t**);
 
 size_t
 json_size(json_t*);

@@ -14,6 +14,10 @@ struct json_stack_unit {
     int depth;
 };
 
+typedef struct {
+    void* p_iter;
+} json_iterator_t;
+
 static char TAB_CH = ' ';
 static int TAB_CH_COUNT = 4;
 
@@ -217,7 +221,7 @@ json_size(json_t* j) {
     return p_size(j->hash_table);
 }
 
-json_iterator_t*
+void*
 json_iter(const json_t* j, const char* prefix, size_t len) {
     json_iterator_t* iter;
 
@@ -231,15 +235,18 @@ json_iter(const json_t* j, const char* prefix, size_t len) {
 
 
 void
-json_iter_free(json_iterator_t* iter) {
-    p_iter_free(iter->p_iter);
+json_iter_free(void* iter) {
+    json_iterator_t* j_iter = iter;
+
+    p_iter_free(j_iter->p_iter);
     free(iter);
 }
 
 int
-json_next(json_iterator_t* iter, char** k, json_value_t** v) {
+json_next(void* iter, char** k, json_value_t** v) {
+    json_iterator_t* j_iter = iter;
     void* void_v;
-    void* hi = iter->p_iter;
+    void* hi = j_iter->p_iter;
 
     if ( p_next(hi, k, &void_v) )
         return 1;
