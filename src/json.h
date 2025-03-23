@@ -74,7 +74,7 @@ json_value_t*
 json_delete_num(json_t* j, const uint64_t key);
 
 json_iterator_t*
-json_iter(const json_t*);
+json_iter(const json_t*, const char*, size_t);
 
 void
 json_iter_free(json_iterator_t*);

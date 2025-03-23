@@ -40,7 +40,7 @@ json_clone(const json_t* j, json_type_t type) {
     char* k = NULL;
     json_value_t* v = NULL;
 
-    iter = json_iter(j);
+    iter = json_iter(j, NULL, 0);
 
     n =  malloc(sizeof(json_t));
     if (!n) return NULL;
@@ -218,13 +218,13 @@ json_size(json_t* j) {
 }
 
 json_iterator_t*
-json_iter(const json_t* j) {
+json_iter(const json_t* j, const char* prefix, size_t len) {
     json_iterator_t* iter;
 
     iter = malloc(sizeof(json_iterator_t));
     if (!iter) return NULL;
 
-    iter->p_iter = p_iter(j->hash_table);
+    iter->p_iter = p_iter(j->hash_table, prefix, len);
 
     return iter;
 }
@@ -232,7 +232,7 @@ json_iter(const json_t* j) {
 
 void
 json_iter_free(json_iterator_t* iter) {
-    free(iter->p_iter);
+    p_iter_free(iter->p_iter);
     free(iter);
 }
 
@@ -296,7 +296,7 @@ json_free(json_t* j) {
 
     if (!j) return;
 
-    iter = p_iter(j->hash_table);
+    iter = p_iter(j->hash_table, NULL, 0);
     while ( !p_next(iter, &k, &v) ) {
         json_value_free_cb(v);
     }
@@ -312,7 +312,7 @@ _json_dump(json_t* json, int pretty_print, int level) {
     int i_keys;
     size_t size = json_calculate_print_size(json, pretty_print);
     char* res = malloc(sizeof(char) * (size + 90));
-    void* iter = json_iter(json);
+    void* iter = json_iter(json, NULL, 0);
     char* ptr = res, *k;
     char border[2] = "{}";
 
@@ -372,7 +372,7 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
             json_value_t* value;
             char* buf_start = buf;
             json_t* arr = v->data;
-            void* iter = json_iter(arr);
+            void* iter = json_iter(arr, NULL, 0);
 
             buf += sprintf(buf, "[");
             buf = xmemset(buf, '\n', pretty_print);
@@ -421,7 +421,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
 
         if (stack->v->type == JSON_OBJECT) {
             int count = 0;
-            iter = json_iter(stack->v->data);
+            iter = json_iter(stack->v->data, NULL, 0);
 
             while ( !json_next(iter, &k, &v) ) {
                 switch(v->type) {
@@ -446,7 +446,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
         } else if (stack->v->type == JSON_ARRAY) {
             int count = 0;
             json_t* arr = stack->v->data;
-            void* iter = json_iter(arr);
+            void* iter = json_iter(arr, NULL, 0);
 
             while ( !json_next(iter, &k, &v) ) {
                 switch(v->type){

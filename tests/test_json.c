@@ -57,7 +57,7 @@ void test_interator(){
     json_set(&json, "d", json_value(&d, JSON_FLOAT));
     json_set(&json, "Kick", json_value(NULL, JSON_NULL));
 
-    iter = json_iter(&json);
+    iter = json_iter(&json, NULL, 0);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "a");
