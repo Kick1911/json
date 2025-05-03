@@ -34,7 +34,7 @@ json_value_t**
 json_array(size_t);
 
 json_t*
-json_parse(const char* start, const char* end);
+json_parse(const char* start, size_t);
 
 json_t*
 json_parse_file(const char* file_path);

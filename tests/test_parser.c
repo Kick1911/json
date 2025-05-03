@@ -8,7 +8,7 @@ void
 test_integer_value() {
     char test[] = "{ \"kick\":   19 \n\n}";
     long int* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 19);
@@ -20,7 +20,7 @@ void
 test_float_value() {
     char test[] = "{ \"kick\":   3.1411165464 \n\n}";
     double* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_FLOAT(*value, 3.1411165464);
@@ -32,7 +32,7 @@ void
 test_null_value() {
     char test[] = "{ \"kick\":   null \n\n}";
     void* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT(!value);
@@ -44,7 +44,7 @@ void
 test_integer_and_null_value() {
     char test[] = "{ \"kick\":   19, \"a\" : null \n\n}";
     long int* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 19);
@@ -57,7 +57,7 @@ void
 test_true_value() {
     char test[] = "{ \"kick\":   true \n\n}";
     unsigned char* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 1);
@@ -69,7 +69,7 @@ void
 test_false_value() {
     char test[] = "{ \"kick\":   false \n\n}";
     unsigned char* value;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_NUM(*value, 0);
@@ -82,7 +82,7 @@ test_object_value() {
     char test[] = "{ \"kick\":   {\"a\": 11} \n\n}";
     json_t* value;
     long int* value2;
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     value2 = json_get(value, "a")->data;
@@ -100,7 +100,7 @@ test_string_value() {
 
     str = malloc(sizeof(char) * size);
     strncpy(str, test, size);
-    json = json_parse(str, str + size);
+    json = json_parse(str, size);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
     T_ASSERT_STRING(value, "ness \\\" ");
@@ -119,7 +119,7 @@ test_array_value() {
     long int*  arr1_a;
     long int*  arr1_b;
 
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
 
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
@@ -149,7 +149,7 @@ test_top_level_array_value() {
     long int* arr1_a;
     long int* arr1_b;
 
-    json_t* json = json_parse(test, test + sizeof(test)/sizeof(test[0]) - 1);
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
 
     T_ASSERT(json);
     arr1 = ((json_value_t*)json_get_num(json, 0))->data;

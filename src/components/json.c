@@ -150,7 +150,7 @@ json_parse_file(const char* file_path) {
 
     fread(str, sizeof(char), size, f);
     str[size] = 0;
-    json = json_parse(str, str + size);
+    json = json_parse(str, size);
     if(!json) return NULL;
 
     free(str);
