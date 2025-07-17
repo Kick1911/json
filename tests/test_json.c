@@ -166,8 +166,13 @@ stress_json_dump() {
     time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     printf("Time taken json_dump(0): %f seconds\n", time_spent);
 
+    start_time = clock();
     T_ASSERT_NUM(json_calculate_print_size(&arr, 0), strlen(res));
     free(res);
+
+    end_time = clock();
+    time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("Time taken json_calculate_print_size(0): %f seconds\n", time_spent);
 
     start_time = clock();
     res = json_dump(&arr, 1);
