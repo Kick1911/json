@@ -161,6 +161,7 @@ json_t*
 json_parse_file(const char* file_path) {
     FILE* f;
     char* str;
+    size_t ret;
     size_t size = 0;
     json_t* json = NULL;
 
@@ -173,9 +174,9 @@ json_parse_file(const char* file_path) {
     str = malloc(sizeof(char) * (size + 1));
     if(!str) goto failed_after_fopen;
 
-    fread(str, sizeof(char), size, f);
-    str[size] = 0;
-    json = json_parse(str, size);
+    ret = fread(str, sizeof(char), size, f);
+    str[ret] = 0;
+    json = json_parse(str, ret);
     if(!json) return NULL;
 
     free(str);

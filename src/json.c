@@ -11,7 +11,7 @@ int main(int argc, char** argv){
     json = json_parse_file(argv[1]);
     if (!json) { perror("JSON parse error"); return 2; }
 
-    res = json_dump(json, 1);
+    res = json_dump(json, 0);
     printf("%s\n", res);
 
     json_free(json);
