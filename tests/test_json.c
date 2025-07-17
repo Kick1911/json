@@ -24,13 +24,13 @@ void test_interface(){
     T_ASSERT(!json_get(&json, "no_exists"));
     T_ASSERT(!json_delete(&json, "no_exists"));
 
-    kick_json = json_get(&json, "kick")->data;
+    kick_json = json_get(&json, "kick")->data.p;
     T_ASSERT(kick_json);
-    T_ASSERT_FLOAT(*((double*)json_get(kick_json, "a")->data), 3.14);
+    T_ASSERT_FLOAT(json_get(kick_json, "a")->data.f, 3.14);
     T_ASSERT(!json_set(&json, "kick", json_value(str, JSON_STRING)));
 
     kick_json_value = json_delete(&json, "kick");
-    kick_str = kick_json_value->data;
+    kick_str = kick_json_value->data.p;
     free(kick_json_value);
 
     T_ASSERT(kick_str);
@@ -61,23 +61,23 @@ void test_interator(){
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "a");
-    T_ASSERT(!(long int)v->data);
+    T_ASSERT(!v->data.b);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "c");
-    T_ASSERT((long int)v->data);
+    T_ASSERT(v->data.b);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "b");
-    T_ASSERT_NUM(*((long int*)v->data), 135);
+    T_ASSERT_NUM(v->data.n, 135);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "d");
-    T_ASSERT_FLOAT(*((double*)v->data), 3.14);
+    T_ASSERT_FLOAT(v->data.f, 3.14);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "Kick");
-    T_ASSERT(!v->data);
+    T_ASSERT(!v->data.p);
 
     T_ASSERT(json_next(iter, &k, &v));
     json_free(&json);
@@ -120,12 +120,12 @@ void test_array(){
     T_ASSERT_NUM(json_size(&json), 2);
 
     value = json_arr_pop(&json);
-    T_ASSERT_DOUBLE(*((double*)value->data), 3.14);
+    T_ASSERT_DOUBLE(value->data.f, 3.14);
     json_value_free(value);
     T_ASSERT_NUM(json_size(&json), 1);
 
     value = json_arr_pop(&json);
-    T_ASSERT_STRING((char*)value->data, "I am Kick");
+    T_ASSERT_STRING((char*)value->data.p, "I am Kick");
     json_value_free(value);
     T_ASSERT_NUM(json_size(&json), 0);
 

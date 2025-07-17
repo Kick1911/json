@@ -13,7 +13,13 @@ typedef enum {
 typedef struct {
     json_type_t type;
     size_t size;
-    void* data;
+
+    union {
+        long int n;
+        double f;
+        char b;
+        void* p;
+    } data;
 } json_value_t;
 
 typedef struct {
