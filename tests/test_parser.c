@@ -72,7 +72,7 @@ test_true_value() {
     json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
-    T_ASSERT_NUM(*value, 1);
+    T_ASSERT_NUM((long int)value, 1);
     json_free(json);
     free(json);
 }
@@ -84,7 +84,7 @@ test_false_value() {
     json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT(json);
     value = json_get(json, "kick")->data;
-    T_ASSERT_NUM(*value, 0);
+    T_ASSERT_NUM((long int)value, 0);
     json_free(json);
     free(json);
 }

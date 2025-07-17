@@ -61,11 +61,11 @@ void test_interator(){
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "a");
-    T_ASSERT(!*((unsigned char*)v->data));
+    T_ASSERT(!(long int)v->data);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "c");
-    T_ASSERT(*((unsigned char*)v->data));
+    T_ASSERT((long int)v->data);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "b");

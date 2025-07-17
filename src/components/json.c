@@ -85,9 +85,7 @@ make_json_value(void* data, json_type_t type, int by_ref) {
 
         case JSON_BOOLEAN:
             size = ((long int)data) ? 4: 5;
-            value = malloc(sizeof(char));
-            if (!value) goto failed;
-            memset(value, (long int)data, sizeof(char));
+            value = (void*)data;
         break;
 
         case JSON_NULL:
@@ -266,10 +264,10 @@ json_value_free_cb(void* n) {
         case JSON_PARSE_ERROR:
         case JSON_MEMORY_ALLOC_ERROR:
         case JSON_NULL:
+        case JSON_BOOLEAN:
         break;
         case JSON_FLOAT:
         case JSON_NUMERIC:
-        case JSON_BOOLEAN:
         case JSON_STRING:
             free(v->data);
         break;
@@ -367,7 +365,7 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
         case JSON_NUMERIC:
             return sprintf(buf, "%ld", *((long int*)v->data));
         case JSON_BOOLEAN:
-            return sprintf(buf, "%s", (*((unsigned char*)v->data) ? "true" : "false"));
+            return sprintf(buf, "%s", ((long int)v->data) ? "true" : "false");
         case JSON_STRING:
             return sprintf(buf, "\"%s\"", (char*)v->data);
         case JSON_OBJECT: {
