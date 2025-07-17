@@ -17,6 +17,18 @@ test_integer_value() {
 }
 
 void
+test_colon_in_key_edge_case() {
+    char test[] = "{ \":kick:\":   19 \n\n}";
+    long int* value;
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
+    T_ASSERT(json);
+    value = json_get(json, ":kick:")->data;
+    T_ASSERT_NUM(*value, 19);
+    json_free(json);
+    free(json);
+}
+
+void
 test_float_value() {
     char test[] = "{ \"kick\":   3.1411165464 \n\n}";
     double* value;
@@ -219,6 +231,7 @@ int main(void){
         TEST(String value, test_string_value());
         TEST(Array value, test_array_value());
         TEST(JSON Files, test_json_files());
+        TEST(Colon in key edge case, test_colon_in_key_edge_case());
     );
     T_CONCLUDE();
     return 0;

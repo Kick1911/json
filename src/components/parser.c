@@ -173,8 +173,8 @@ json_parse(const char* start, size_t len) {
 
         end_quote = xstrchr(s + 1, e, '"');
         strncpy(key, s + 1, end_quote - (s + 1));
-        s += strlen(key);
-        s = strchr(s, ':');
+        s += end_quote - (s + 1);
+        s = strchr(end_quote, ':');
         s = ignore_space(s + 1);
 
         ret = json_value_parse(s, &value_end, &value);
