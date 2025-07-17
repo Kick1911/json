@@ -29,7 +29,7 @@ json_value_parse(const char* s, const char** end, void** value) {
         } break;
 
         case '"': {
-            char* temp;
+            char* heap;
             char* e;
 
             e = end_of_string(s);
@@ -37,18 +37,17 @@ json_value_parse(const char* s, const char** end, void** value) {
             s++; /* skip openning double quote */
             length = e - s;
 
-            temp = malloc(sizeof(char) * (length + 1));
-            if (!temp) return JSON_MEMORY_ALLOC_ERROR;
+            heap = malloc(sizeof(char) * (length + 1));
+            if (!heap) return JSON_MEMORY_ALLOC_ERROR;
 
-            strncpy(temp, s, length);
-            strncpy(temp + length, "\0", 1);
+            strncpy(heap, s, length);
+            heap[length] = 0;
+
             s = e + 1;
 
             type = JSON_STRING;
-            v = json_value(temp, type);
+            v = json_value_ref(heap, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-
-            free(temp);
         } break;
 
         case '[': {
@@ -95,7 +94,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             sscanf(s, "%s", str);
             if (strcmp(str, "true")) return JSON_PARSE_ERROR;
 
-            s += strlen(str);
+            s += 4; /* Length of true */
 
             type = JSON_BOOLEAN;
             v = json_value((void*)1, type);
@@ -106,7 +105,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             sscanf(s, "%s", str);
             if (strcmp(str, "false")) return JSON_PARSE_ERROR;
 
-            s += strlen(str);
+            s += 5; /* Length of false */
 
             type = JSON_BOOLEAN;
             v = json_value((void*)0, type);
@@ -117,7 +116,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             sscanf(s, "%s", str);
             if (strcmp(str, "null")) return JSON_PARSE_ERROR;
 
-            s += strlen(str);
+            s += 4; /* Length of null */
 
             type = JSON_NULL;
             v = json_value(NULL, type);

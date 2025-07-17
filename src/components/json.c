@@ -102,11 +102,15 @@ make_json_value(void* data, json_type_t type, int by_ref) {
         break;
 
         case JSON_STRING: {
-            size = sizeof(char) * (strlen((char*)data) + 1);
-            value = malloc(size);
-            if(!value) goto failed;
-            memcpy(value, data, size);
-            size++; /* Plus the extra null char */
+            size = strlen((char*)data);
+
+            if (by_ref) value = data;
+            else {
+                value = malloc(sizeof(char) * (size + 1));
+                if(!value) goto failed;
+                memcpy(value, data, size + 1);
+            }
+            size += 2; /* Plus 2 quotes */
         } break;
         default:
             return NULL;
