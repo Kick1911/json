@@ -29,6 +29,18 @@ test_colon_in_key_edge_case() {
 }
 
 void
+test_double_quote_in_key_edge_case() {
+    char test[] = "{ \"\\\"kick\\\"\":   19 \n\n}";
+    long int* value;
+    json_t* json = json_parse(test, sizeof(test)/sizeof(test[0]) - 1);
+    T_ASSERT(json);
+    value = json_get(json, "\"kick\"")->data;
+    T_ASSERT_NUM(*value, 19);
+    json_free(json);
+    free(json);
+}
+
+void
 test_float_value() {
     char test[] = "{ \"kick\":   3.1411165464 \n\n}";
     double* value;

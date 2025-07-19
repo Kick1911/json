@@ -1,13 +1,15 @@
 #include <malloc.h>
 #include <string.h>
+#include <assert.h>
 
 #include <json.h>
+#include <ptree.h>
+#include <dlinked_list.h>
+
 #include <utils/json.h>
 #include <utils/stack.h>
 #include <utils/xstrrchr.h>
-#include <ptree.h>
-#include <dlinked_list.h>
-#include <assert.h>
+#include <utils/xstrescape.h>
 
 struct json_stack_unit {
     json_value_t* v;
@@ -164,16 +166,37 @@ failed_after_fopen:
     return NULL;
 }
 
+static char*
+clean_key(const char* key, size_t size) {
+    char* cleaned_key;
+
+    cleaned_key = malloc(sizeof(char) * ((size * 2) + 1));
+    if (!cleaned_key) return NULL;
+
+    xstrescape(cleaned_key, key, size + 1, '"');
+
+    return cleaned_key;
+}
+
 int
 json_set(json_t* j, const char* key, json_value_t* v) {
+    int ret;
     void* data;
+    char* cleaned_key;
+    size_t size = strlen(key);
 
     assert(j->type == JSON_OBJECT);
 
-    if ( (data = json_delete(j, key)) ) /* FIXME: Optimise this */
+    cleaned_key = clean_key(key, size);
+    if (!cleaned_key) return 2;
+
+    if ( (data = p_delete(j->hash_table, key)) ) /* FIXME: Optimise this */
         json_value_free_cb(data);
 
-    return p_insert(j->hash_table, key, v);
+    ret = p_insert(j->hash_table, cleaned_key, v);
+
+    free(cleaned_key);
+    return ret;
 }
 
 int
@@ -194,7 +217,16 @@ json_arr_append(json_t* j, json_value_t* v) {
 
 json_value_t*
 json_get(json_t* j, const char* key) {
-    return p_lookup(j->hash_table, key);
+    void* ret;
+    char* cleaned_key;
+    size_t size = strlen(key);
+
+    cleaned_key = clean_key(key, size);
+    if (!cleaned_key) return NULL;
+
+    ret = p_lookup(j->hash_table, cleaned_key);
+    free(cleaned_key);
+    return ret;
 }
 
 json_value_t*
@@ -204,7 +236,16 @@ json_get_num(json_t* j, const uint64_t key) {
 
 json_value_t*
 json_delete(json_t* j, const char* key) {
-    return p_delete(j->hash_table, key);
+    void* ret;
+    char* cleaned_key;
+    size_t size = strlen(key);
+
+    cleaned_key = clean_key(key, size);
+    if (!cleaned_key) return NULL;
+
+    ret = p_delete(j->hash_table, key);
+    free(cleaned_key);
+    return ret;
 }
 
 json_value_t*
@@ -225,14 +266,27 @@ json_size(json_t* j) {
 
 void*
 json_iter(const json_t* j, const char* prefix, size_t len) {
+    char* cleaned_prefix;
     json_iterator_t* iter;
 
     iter = malloc(sizeof(json_iterator_t));
     if (!iter) return NULL;
 
-    iter->p_iter = p_iter(j->hash_table, prefix, len);
+    if (len > 0) {
+        cleaned_prefix = clean_key(prefix, len);
+        if (!cleaned_prefix) goto failed;
+
+        iter->p_iter = p_iter(j->hash_table, cleaned_prefix, len);
+
+        free(cleaned_prefix);
+    } else
+        iter->p_iter = p_iter(j->hash_table, NULL, 0);
 
     return iter;
+
+failed:
+    free(iter);
+    return NULL;
 }
 
 
