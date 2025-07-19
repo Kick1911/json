@@ -167,7 +167,7 @@ json_parse(const char* start, size_t len) {
 
     while ( (s = xstrchr(s, e, '"')) && s < e ) {
         char* end_quote;
-        char key[255] = {0};
+        char key[JSON_KEY_LIMIT] = {0};
         void* value = NULL;
 
         end_quote = xstrchr(s + 1, e, '"');
