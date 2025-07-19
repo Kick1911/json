@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define JSON_KEY_LIMIT 1024
+
 typedef enum {
     JSON_PARSE_ERROR, JSON_MEMORY_ALLOC_ERROR,
     JSON_NULL, JSON_OBJECT, JSON_ARRAY, JSON_STRING,

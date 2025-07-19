@@ -53,9 +53,12 @@ void test_interator(){
 
     json_set(&json, "a", json_value((char*)0, JSON_BOOLEAN));
     json_set(&json, "c", json_value((char*)1, JSON_BOOLEAN));
-    json_set(&json, "b", json_value(&b, JSON_NUMERIC));
+    json_set(&json, "b\"", json_value(&b, JSON_NUMERIC));
     json_set(&json, "d", json_value(&d, JSON_FLOAT));
     json_set(&json, "Kick", json_value(NULL, JSON_NULL));
+
+    v = json_get(&json, "b\"");
+    T_ASSERT_NUM(*((long int*)v->data), 135);
 
     iter = json_iter(&json, NULL, 0);
 
@@ -68,7 +71,7 @@ void test_interator(){
     T_ASSERT((long int)v->data);
 
     json_next(iter, &k, &v);
-    T_ASSERT_STRING(k, "b");
+    T_ASSERT_STRING(k, "b\\\"");
     T_ASSERT_NUM(*((long int*)v->data), 135);
 
     json_next(iter, &k, &v);
