@@ -6,7 +6,9 @@
 #include <ptree.h>
 #include <dlinked_list.h>
 
-#include <utils/json.h>
+#include <utils/simple_json_set.h>
+#include <utils/pack_json_value.h>
+#include <utils/xmemset.h>
 #include <utils/stack.h>
 #include <utils/xstrrchr.h>
 #include <utils/xstrescape.h>
@@ -55,7 +57,7 @@ json_clone(const json_t* j, json_type_t type) {
         goto failed;
 
     while (!json_next(iter, &k, &v))
-        json_set(n, k, json_value(v->data, v->type));
+        simple_json_set(n, k, json_value(v->data, v->type));
 
     json_iter_free(iter);
     return n;
@@ -193,7 +195,7 @@ json_set(json_t* j, const char* key, json_value_t* v) {
     if ( (data = p_delete(j->hash_table, key)) ) /* FIXME: Optimise this */
         json_value_free_cb(data);
 
-    ret = p_insert(j->hash_table, cleaned_key, v);
+    ret = simple_json_set(j, cleaned_key, v);
 
     free(cleaned_key);
     return ret;
@@ -212,7 +214,7 @@ json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
 int
 json_arr_append(json_t* j, json_value_t* v) {
     assert(j->type == JSON_ARRAY);
-    return json_set_num(j, json_size(j), v);
+    return p_insert_num(j->hash_table, json_size(j), v);
 }
 
 json_value_t*
