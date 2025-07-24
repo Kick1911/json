@@ -17,6 +17,22 @@ test_integer_value() {
 }
 
 void
+test_parser_failed_with_this() {
+    char test_fail[] = "{\"id\": 7, \"artist_id\": 7, \"name\": \"Akh Lad Jaave (From \"Loveyatri\")\"}";
+    char test_pass[] = "{\"id\": 7, \"artist_id\": 7, \"name\": \"Akh Lad Jaave (From \\\"Loveyatri\\\")\"}";
+    json_t* json;
+
+    json = json_parse(test_fail, sizeof(test_fail)/sizeof(test_fail[0]) - 1);
+    T_ASSERT(!json);
+
+    json = json_parse(test_pass, sizeof(test_pass)/sizeof(test_pass[0]) - 1);
+    T_ASSERT(json);
+
+    json_free(json);
+    free(json);
+}
+
+void
 test_colon_in_key_edge_case() {
     char test[] = "{ \":kick:\":   19 \n\n}";
     long int* value;
@@ -244,6 +260,8 @@ int main(void){
         TEST(Array value, test_array_value());
         TEST(JSON Files, test_json_files());
         TEST(Colon in key edge case, test_colon_in_key_edge_case());
+        TEST(Double quote in key edge case, test_double_quote_in_key_edge_case());
+        TEST(Parser failed, test_parser_failed_with_this());
     );
     T_CONCLUDE();
     return 0;
