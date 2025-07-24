@@ -17,7 +17,7 @@ test_integer_value() {
 }
 
 void
-test_parser_failed_with_this() {
+test_double_quote_in_value() {
     char test_fail[] = "{\"id\": 7, \"artist_id\": 7, \"name\": \"Akh Lad Jaave (From \"Loveyatri\")\"}";
     char test_pass[] = "{\"id\": 7, \"artist_id\": 7, \"name\": \"Akh Lad Jaave (From \\\"Loveyatri\\\")\"}";
     json_t* json;
@@ -261,7 +261,7 @@ int main(void){
         TEST(JSON Files, test_json_files());
         TEST(Colon in key edge case, test_colon_in_key_edge_case());
         TEST(Double quote in key edge case, test_double_quote_in_key_edge_case());
-        TEST(Parser failed, test_parser_failed_with_this());
+        TEST(Double quote in value, test_double_quote_in_value());
     );
     T_CONCLUDE();
     return 0;
