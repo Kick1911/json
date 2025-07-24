@@ -1,5 +1,6 @@
-#ifndef _JSON_UTILS_H
-#define _JSON_UTILS_H
+#ifndef _UTILS_PACK_JSON_VALUE_H
+#define _UTILS_PACK_JSON_VALUE_H
+
 #include <malloc.h>
 #include <json.h>
 
@@ -10,13 +11,6 @@ pack_json_value(void* value, size_t size, json_type_t type) {
     j_value->size = size;
     j_value->type = type;
     return j_value;
-}
-
-static void*
-xmemset(void *s, int c, size_t n) {
-    unsigned char* p = s, ch = c;
-    while( n-- && (*p++ = ch) );
-    return p;
 }
 
 #endif

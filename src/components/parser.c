@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
+#include <utils/simple_json_set.h>
 #include <utils/parser_utils.h>
 #include <utils/ignore_space.h>
 #include <utils/split_str_array.h>
@@ -170,10 +171,17 @@ json_parse(const char* start, size_t len) {
         char key[JSON_KEY_LIMIT] = {0};
         void* value = NULL;
 
-        end_quote = xstrchr(s + 1, e, '"');
+        end_quote = (char*)s;
+        do {
+            end_quote = xstrchr(end_quote + 1, e, '"');
+        } while (end_quote[-1] == '\\');
+
         strncpy(key, s + 1, end_quote - (s + 1));
-        s += end_quote - (s + 1);
-        s = strchr(end_quote, ':');
+        s = end_quote;
+        s = ignore_space(s + 1);
+        if (*s != ':')
+            goto failed;
+
         s = ignore_space(s + 1);
 
         ret = json_value_parse(s, &value_end, &value);
@@ -184,7 +192,8 @@ json_parse(const char* start, size_t len) {
             default:
             break;
         }
-        if (json_set(json, key, value))
+
+        if (simple_json_set(json, key, value))
             goto failed;
         s = value_end;
     }
