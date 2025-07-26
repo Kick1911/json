@@ -281,6 +281,16 @@ test_json_files() {
     json_free(&json);
 }
 
+void
+test_bad_json() {
+    int ret;
+    json_t json;
+    char test[] = "{\"file-seek\": 24638, \"size\": 169, \"compressed-si";
+
+    ret = json_parse(&json, test, sizeof(test)/sizeof(test[0]) - 1);
+    T_ASSERT_NUM(ret, 1);
+}
+
 int main(void){
     T_SUITE(Parse JSON,
         TEST(Integer value, test_integer_value());
@@ -296,6 +306,7 @@ int main(void){
         TEST(Colon in key edge case, test_colon_in_key_edge_case());
         TEST(Double quote in key edge case, test_double_quote_in_key_edge_case());
         TEST(Double quote in value, test_double_quote_in_value());
+        TEST(Bad JSON, test_bad_json());
     );
     T_CONCLUDE();
     return 0;

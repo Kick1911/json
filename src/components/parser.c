@@ -177,12 +177,15 @@ json_parse(json_t* json, const char* start, size_t len) {
         char* end_quote;
         void* value = NULL;
 
+        key_start = s - start + 1;
+
         end_quote = (char*)s;
         do {
             end_quote = xstrchr(end_quote + 1, e, '"');
-        } while (end_quote[-1] == '\\');
+        } while (end_quote && end_quote[-1] == '\\');
 
-        key_start = s - start + 1;
+        if (!end_quote) goto failed_key_parse;
+
         ptr = xstrncpy(key, s + 1, end_quote - (s + 1));
         *ptr = 0;
 
