@@ -282,6 +282,27 @@ test_json_files() {
 }
 
 void
+test_corrupt_big_json() {
+    int ret;
+    FILE* f;
+    char str[31306];
+    json_t json;
+
+    f = fopen("./tests/data/corrupt.json", "r");
+
+    ret = fread(str, sizeof(char), 31305, f);
+    str[ret] = 0;
+
+    ret = json_parse(&json, str, ret);
+    T_ASSERT_NUM(ret, 0);
+
+    T_ASSERT_NUM(json_size(&json), 7);
+
+    json_free(&json);
+    fclose(f);
+}
+
+void
 test_bad_json() {
     int ret;
     json_t json;
@@ -307,6 +328,7 @@ int main(void){
         TEST(Double quote in key edge case, test_double_quote_in_key_edge_case());
         TEST(Double quote in value, test_double_quote_in_value());
         TEST(Bad JSON, test_bad_json());
+        TEST(Corrupt Big JSON, test_corrupt_big_json());
     );
     T_CONCLUDE();
     return 0;

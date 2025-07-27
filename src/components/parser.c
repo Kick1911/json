@@ -170,10 +170,14 @@ json_parse(json_t* json, const char* start, size_t len) {
     char key[JSON_KEY_LIMIT] = {0};
     const char* s = start, *e = start + len, *value_end = NULL;
 
+    s = ignore_space(s);
+    if (*s != '{' && *s != '[')
+        goto failed_not_json;
+
     if (json_init(json, JSON_OBJECT))
         return 2;
 
-    while ( (s = xstrchr(s, e, '"')) && s < e ) {
+    while ( (*s != '}' && *s != ']') && (s = xstrchr(s, e, '"')) && s < e ) {
         char* end_quote;
         void* value = NULL;
 
@@ -208,10 +212,16 @@ json_parse(json_t* json, const char* start, size_t len) {
 
         if (simple_json_set(json, key, value))
             goto failed;
+
         s = value_end;
+        s = ignore_space(s);
     }
 
     return 0;
+
+failed_not_json:
+    fprintf(stderr, "Failed not a json\n");
+    return 1;
 
 failed_key_parse:
     fprintf(stderr, "Failed to parse at character: %ld\n", key_start);

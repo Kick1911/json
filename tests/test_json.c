@@ -272,7 +272,30 @@ basic_json_dump() {
     json_free(&json2);
 }
 
-int main(void){
+void
+test_json_reference() {
+    long int record_index = 21;
+    long int len = 243;
+    long int ret = 33;
+    json_t* inner_json, *json;
+
+    json = malloc(sizeof(json_t));
+    inner_json = malloc(sizeof(json_t));
+
+    T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
+    T_ASSERT_NUM(json_init(inner_json, JSON_OBJECT), 0);
+
+    json_set(inner_json, "file-seek", json_value(&record_index, JSON_NUMERIC));
+    json_set(inner_json, "size", json_value(&len, JSON_NUMERIC));
+    json_set(inner_json, "compressed-size", json_value(&ret, JSON_NUMERIC));
+    json_set(json, "key name", json_value_ref(inner_json, JSON_OBJECT));
+
+    json_free(json);
+    free(json);
+}
+
+int
+main(void){
 
     TEST(JSON interface, test_interface());
     TEST(JSON iterator, test_interator());
@@ -281,6 +304,7 @@ int main(void){
         TEST(Basic, basic_json_dump());
         TEST(Stress test, stress_json_dump());
     );
+    TEST(JSON Reference, test_json_reference());
 
     T_CONCLUDE();
     return 0;
