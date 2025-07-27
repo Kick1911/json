@@ -134,40 +134,6 @@ json_value_ref(void* data, json_type_t type) {
     return make_json_value(data, type, 1);
 }
 
-/*
- * Errors:
- * - All errors for `fopen` and `malloc`
- */
-json_t*
-json_parse_file(const char* file_path) {
-    FILE* f;
-    char* str;
-    size_t size = 0, ret;
-    json_t* json = NULL;
-
-    if (!(f = fopen(file_path, "r"))) return NULL;
-
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    str = malloc(sizeof(char) * (size + 1));
-    if(!str) goto failed_after_fopen;
-
-    ret = fread(str, sizeof(char), size, f);
-    str[ret] = 0;
-    json = json_parse(str, ret);
-    if(!json) return NULL;
-
-    free(str);
-    fclose(f);
-    return json;
-
-failed_after_fopen:
-    fclose(f);
-    return NULL;
-}
-
 static char*
 clean_key(const char* key, size_t size) {
     char* cleaned_key;
