@@ -35,11 +35,11 @@ json_value_free(json_value_t*);
 json_value_t**
 json_array(size_t);
 
-json_t*
-json_parse(const char* start, size_t);
+int
+json_parse(json_t*, const char* start, size_t);
 
-json_t*
-json_parse_file(const char* file_path);
+int
+json_parse_file(json_t*, const char* file_path);
 
 json_value_t*
 json_value(void* data, json_type_t);
