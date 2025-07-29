@@ -9,12 +9,16 @@ test_integer_value() {
     int ret;
     json_t json;
     long int* value;
-    char test[] = "{ \"kick\":   19 \n\n}";
+    char test[] = "{\"album_id\":53,\"artist_id\":21}";
 
     ret = json_parse(&json, test, sizeof(test)/sizeof(test[0]) - 1);
     T_ASSERT_NUM(ret, 0);
-    value = json_get(&json, "kick")->data;
-    T_ASSERT_NUM(*value, 19);
+    T_ASSERT_NUM(json_size(&json), 2);
+    value = json_get(&json, "artist_id")->data;
+    T_ASSERT_NUM(*value, 21);
+
+    value = json_get(&json, "album_id")->data;
+    T_ASSERT_NUM(*value, 53);
     json_free(&json);
 }
 

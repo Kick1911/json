@@ -136,7 +136,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             char* p_end;
 
             /* Integer and float */
-            sscanf(s, "%s", str);
+            sscanf(s, "%[^,}]", str);
             if (strchr(str, '.')) {
                 double _double = 0.0;
 
