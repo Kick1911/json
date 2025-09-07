@@ -57,7 +57,7 @@ json_clone(const json_t* j, json_type_t type) {
         goto failed;
 
     while (!json_next(iter, &k, &v))
-        simple_json_set(n, k, json_value(v->data, v->type));
+        simple_json_set(n, k, json_value(v->data, v->type), NULL);
 
     json_iter_free(iter);
     return n;
@@ -147,9 +147,8 @@ clean_key(const char* key, size_t size) {
 }
 
 int
-json_set(json_t* j, const char* key, json_value_t* v) {
+json_set(json_t* j, const char* key, json_value_t* v, json_value_t** remainder) {
     int ret;
-    void* data;
     char* cleaned_key;
     size_t size = strlen(key);
 
@@ -158,29 +157,21 @@ json_set(json_t* j, const char* key, json_value_t* v) {
     cleaned_key = clean_key(key, size);
     if (!cleaned_key) return 2;
 
-    if ( (data = p_delete(j->hash_table, key)) ) /* FIXME: Optimise this */
-        json_value_free_cb(data);
-
-    ret = simple_json_set(j, cleaned_key, v);
+    ret = simple_json_set(j, cleaned_key, v, remainder);
 
     free(cleaned_key);
     return ret;
 }
 
 int
-json_set_num(json_t* j, const uint64_t key, json_value_t* v) {
-    void* data;
-
-    if ( (data = json_delete_num(j, key)) ) /* FIXME: Optimise this */
-        json_value_free_cb(data);
-
-    return p_insert_num(j->hash_table, key, v);
+json_set_num(json_t* j, const uint64_t key, json_value_t* v, json_value_t** remainder) {
+    return p_insert_num(j->hash_table, key, v, (void**)remainder);
 }
 
 int
 json_arr_append(json_t* j, json_value_t* v) {
     assert(j->type == JSON_ARRAY);
-    return p_insert_num(j->hash_table, json_size(j), v);
+    return p_insert_num(j->hash_table, json_size(j), v, NULL);
 }
 
 json_value_t*
