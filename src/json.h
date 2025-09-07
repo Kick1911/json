@@ -48,10 +48,10 @@ json_value_t*
 json_value_ref(void* data, json_type_t);
 
 int
-json_set(json_t* j, const char* key, json_value_t* v);
+json_set(json_t* j, const char* key, json_value_t* v, json_value_t**);
 
 int
-json_set_num(json_t* j, const uint64_t key, json_value_t* v);
+json_set_num(json_t* j, const uint64_t key, json_value_t* v, json_value_t**);
 
 int
 json_arr_append(json_t* j, json_value_t* v);

@@ -11,6 +11,7 @@
 void test_interface(){
     json_t* kick_json;
     json_value_t* kick_json_value;
+    json_value_t* remainder;
     json_t json, json2;
     double f = 3.14;
     char str[] = "I am Kick", *kick_str;
@@ -18,16 +19,18 @@ void test_interface(){
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
 
-    T_ASSERT(!json_set(&json2, "a", json_value(&f, JSON_FLOAT)));
-    T_ASSERT(!json_set(&json, "kick", json_value(&json2, JSON_OBJECT)));
-    T_ASSERT_NUM(json_set(&json, "", NULL), 1);
+    T_ASSERT(!json_set(&json2, "a", json_value(&f, JSON_FLOAT), NULL));
+    T_ASSERT(!json_set(&json, "kick", json_value(&json2, JSON_OBJECT), NULL));
+    T_ASSERT_NUM(json_set(&json, "", NULL, NULL), 1);
     T_ASSERT(!json_get(&json, "no_exists"));
     T_ASSERT(!json_delete(&json, "no_exists"));
 
     kick_json = json_get(&json, "kick")->data;
     T_ASSERT(kick_json);
     T_ASSERT_FLOAT(*((double*)json_get(kick_json, "a")->data), 3.14);
-    T_ASSERT(!json_set(&json, "kick", json_value(str, JSON_STRING)));
+    T_ASSERT(!json_set(&json, "kick", json_value(str, JSON_STRING), &remainder));
+    T_ASSERT_FLOAT(*((double*)json_get(remainder->data, "a")->data), 3.14);
+    json_value_free(remainder);
 
     kick_json_value = json_delete(&json, "kick");
     kick_str = kick_json_value->data;
@@ -51,11 +54,11 @@ void test_interator(){
 
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
 
-    json_set(&json, "a", json_value((char*)0, JSON_BOOLEAN));
-    json_set(&json, "c", json_value((char*)1, JSON_BOOLEAN));
-    json_set(&json, "b\"", json_value(&b, JSON_NUMERIC));
-    json_set(&json, "d", json_value(&d, JSON_FLOAT));
-    json_set(&json, "Kick", json_value(NULL, JSON_NULL));
+    json_set(&json, "a", json_value((char*)0, JSON_BOOLEAN), NULL);
+    json_set(&json, "c", json_value((char*)1, JSON_BOOLEAN), NULL);
+    json_set(&json, "b\"", json_value(&b, JSON_NUMERIC), NULL);
+    json_set(&json, "d", json_value(&d, JSON_FLOAT), NULL);
+    json_set(&json, "Kick", json_value(NULL, JSON_NULL), NULL);
 
     v = json_get(&json, "b\"");
     T_ASSERT_NUM(*((long int*)v->data), 135);
@@ -152,8 +155,8 @@ stress_json_dump() {
 
         json = malloc(sizeof(json_t));
         T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
-        json_set(json, "id", json_value(&i, JSON_NUMERIC));
-        json_set(json, "line_data", json_value(&two_times, JSON_NUMERIC));
+        json_set(json, "id", json_value(&i, JSON_NUMERIC), NULL);
+        json_set(json, "line_data", json_value(&two_times, JSON_NUMERIC), NULL);
         json_arr_append(&arr, json_value_ref(json, JSON_OBJECT));
 
         i++;
@@ -203,12 +206,12 @@ basic_json_dump() {
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(arr, JSON_ARRAY), 0);
 
-    json_set_num(arr, 0, json_value(str, JSON_STRING));
-    json_set_num(arr, 1, json_value(&f, JSON_FLOAT));
-    json_set(&json, "kickness", json_value_ref(arr, JSON_ARRAY));
-    json_set(&json, "boolean", json_value((char*)1, JSON_BOOLEAN));
-    json_set(&json2, "number", json_value(&d, JSON_NUMERIC));
-    json_set(&json, "object", json_value(&json2, JSON_OBJECT));
+    json_set_num(arr, 0, json_value(str, JSON_STRING), NULL);
+    json_set_num(arr, 1, json_value(&f, JSON_FLOAT), NULL);
+    json_set(&json, "kickness", json_value_ref(arr, JSON_ARRAY), NULL);
+    json_set(&json, "boolean", json_value((char*)1, JSON_BOOLEAN), NULL);
+    json_set(&json2, "number", json_value(&d, JSON_NUMERIC), NULL);
+    json_set(&json, "object", json_value(&json2, JSON_OBJECT), NULL);
 
     /* {"number": 5432543} */
     res = json_dump(&json2, 0);
@@ -285,10 +288,10 @@ test_json_reference() {
     T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(inner_json, JSON_OBJECT), 0);
 
-    json_set(inner_json, "file-seek", json_value(&record_index, JSON_NUMERIC));
-    json_set(inner_json, "size", json_value(&len, JSON_NUMERIC));
-    json_set(inner_json, "compressed-size", json_value(&ret, JSON_NUMERIC));
-    json_set(json, "key name", json_value_ref(inner_json, JSON_OBJECT));
+    json_set(inner_json, "file-seek", json_value(&record_index, JSON_NUMERIC), NULL);
+    json_set(inner_json, "size", json_value(&len, JSON_NUMERIC), NULL);
+    json_set(inner_json, "compressed-size", json_value(&ret, JSON_NUMERIC), NULL);
+    json_set(json, "key name", json_value_ref(inner_json, JSON_OBJECT), NULL);
 
     json_free(json);
     free(json);

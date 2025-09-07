@@ -89,7 +89,7 @@ json_value_parse(const char* s, const char** end, void** value) {
                     default:
                     break;
                 }
-                if (json_set_num(json_arr, i, value))
+                if (json_set_num(json_arr, i, value, NULL))
                     return JSON_PARSE_ERROR;
                 i++;
             }
@@ -210,7 +210,7 @@ json_parse(json_t* json, const char* start, size_t len) {
             break;
         }
 
-        if (simple_json_set(json, key, value))
+        if (simple_json_set(json, key, value, NULL))
             goto failed;
 
         s = value_end;
