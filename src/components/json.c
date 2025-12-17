@@ -215,6 +215,9 @@ json_delete_num(json_t* j, const uint64_t key) {
 json_value_t*
 json_arr_pop(json_t* j) {
     assert(j->type == JSON_ARRAY);
+
+    if (json_size(j) < 1)
+        return NULL;
     return json_delete_num(j, json_size(j) - 1);
 }
 

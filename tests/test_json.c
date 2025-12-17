@@ -2,10 +2,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 #include <malloc.h>
-#include <errno.h>
 #include <json.h>
 
 void test_interface(){
@@ -134,6 +132,9 @@ void test_array(){
     T_ASSERT_STRING((char*)value->data, "I am Kick");
     json_value_free(value);
     T_ASSERT_NUM(json_size(&json), 0);
+
+    T_ASSERT(!json_arr_pop(&json));
+    T_ASSERT(!json_arr_pop(&json));
 
     json_free(&json);
 }
