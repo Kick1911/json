@@ -1,8 +1,5 @@
 import json
 
-arr = []
-
-for i in range(10000):
-    arr.append({"id": i, "line_data": i * 2})
-
-res = str(json.dumps(arr))
+with open("kpd.db") as f:
+    a = json.loads(f.read())
+    print(json.dumps(a))
