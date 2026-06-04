@@ -1,5 +1,6 @@
 #include <malloc.h>
 #include <string.h>
+#include <stdio.h>
 #include <assert.h>
 
 #include <json.h>
@@ -309,6 +310,7 @@ json_init(json_t* j, json_type_t type) {
     j->hash_table = calloc(1, sizeof(ptree_t));
     if (!j->hash_table) goto failed;
 
+    ptree_set_allocator(malloc, free);
     return ptree_init(j->hash_table);
 failed:
     return 2;
