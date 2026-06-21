@@ -69,49 +69,41 @@ failed:
 }
 
 static json_value_t*
-make_json_value(void* data, json_type_t type, int by_ref) {
+make_json_value(union json_value_types data, json_type_t type, int by_ref) {
     size_t size = 0;
-    void* value;
+    union json_value_types value;
 
     switch(type) {
-        case JSON_FLOAT:
-            size = 7 + count_digits(*((double*)data));
-            value = malloc(sizeof(double));
-            if (!value) goto failed;
-            memcpy(value, data, sizeof(double));
-        break;
-
         case JSON_NUMERIC:
-            size = count_digits(*((long int*)data));
-            value = malloc(sizeof(long int));
-            if (!value) goto failed;
-            memcpy(value, data, sizeof(long int));
+        case JSON_FLOAT:
+            size = 7 + count_digits(data.numeric);
+            value = data;
         break;
 
         case JSON_BOOLEAN:
-            size = ((long int)data) ? 4: 5;
-            value = (void*)data;
+            size = (data.bool) ? 4: 5;
+            value = data;
         break;
 
         case JSON_NULL:
             size = 8; /* 6 + 2 for quotes */
-            value = NULL;
+            value.null = NULL;
         break;
 
         case JSON_ARRAY:
         case JSON_OBJECT:
             if (by_ref) value = data;
-            else value = json_clone(data, type);
+            else value.object = json_clone(data.object, type);
         break;
 
         case JSON_STRING: {
-            size = strlen((char*)data);
+            size = strlen(data.string);
 
             if (by_ref) value = data;
             else {
-                value = malloc(sizeof(char) * (size + 1));
-                if(!value) goto failed;
-                memcpy(value, data, size + 1);
+                value.string = malloc(sizeof(char) * (size + 1));
+                if(!value.string) goto failed;
+                memcpy(value.string, data.string, size);
             }
             size += 2; /* Plus 2 quotes */
         } break;
@@ -126,12 +118,12 @@ make_json_value(void* data, json_type_t type, int by_ref) {
 }
 
 json_value_t*
-json_value(void* data, json_type_t type) {
+json_value(union json_value_types data, json_type_t type) {
     return make_json_value(data, type, 0);
 }
 
 json_value_t*
-json_value_ref(void* data, json_type_t type) {
+json_value_ref(union json_value_types data, json_type_t type) {
     return make_json_value(data, type, 1);
 }
 
@@ -282,16 +274,16 @@ json_value_free_cb(void* n) {
         case JSON_MEMORY_ALLOC_ERROR:
         case JSON_NULL:
         case JSON_BOOLEAN:
-        break;
         case JSON_FLOAT:
         case JSON_NUMERIC:
+        break;
         case JSON_STRING:
-            free(v->data);
+            free(v->data.string);
         break;
         case JSON_ARRAY:
         case JSON_OBJECT:
-            json_free(v->data);
-            free(v->data);
+            json_free(v->data.object);
+            free(v->data.object);
         break;
     }
     free(v);
@@ -379,16 +371,16 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
         case JSON_NULL:
             return sprintf(buf, "\"(null)\"");
         case JSON_FLOAT:
-            return sprintf(buf, "%.6f", *((double*)v->data));
+            return sprintf(buf, "%.6f", v->data.floating_point);
         case JSON_NUMERIC:
-            return sprintf(buf, "%ld", *((long int*)v->data));
+            return sprintf(buf, "%ld", v->data.numeric);
         case JSON_BOOLEAN:
-            return sprintf(buf, "%s", ((long int)v->data) ? "true" : "false");
+            return sprintf(buf, "%s", (v->data.bool) ? "true" : "false");
         case JSON_STRING:
-            return sprintf(buf, "\"%s\"", (char*)v->data);
+            return sprintf(buf, "\"%s\"", v->data.string);
         case JSON_OBJECT: {
             int size = 0;
-            char* res = _json_dump(v->data, pretty_print, level + 1);
+            char* res = _json_dump(v->data.object, pretty_print, level + 1);
             size = sprintf(buf, "%s", res);
             free(res);
             return size;
@@ -398,7 +390,7 @@ json_print_value(char* buf, json_value_t* v, int pretty_print, int level) {
             char* key;
             json_value_t* value;
             char* buf_start = buf;
-            json_t* arr = v->data;
+            json_t* arr = v->data.object;
             void* iter = json_iter(arr, NULL, 0);
 
             buf += sprintf(buf, "[");
@@ -434,9 +426,11 @@ json_calculate_print_size(json_t* json, int pretty_print) {
     void* iter, *json_wrap;
     dl_list_t dl;
     struct json_stack_unit* unit, *stack;
+    union json_value_types data;
 
     dl_init(&dl);
-    json_wrap = json_value_ref(json, json->type);
+    data.object = json;
+    json_wrap = json_value_ref(data, json->type);
 
     unit = malloc(sizeof(struct json_stack_unit));
     unit->v = json_wrap;
@@ -448,7 +442,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
 
         if (stack->v->type == JSON_OBJECT) {
             int count = 0;
-            iter = json_iter(stack->v->data, NULL, 0);
+            iter = json_iter(stack->v->data.object, NULL, 0);
 
             while ( !json_next(iter, &k, &v) ) {
                 switch(v->type) {
@@ -472,7 +466,7 @@ json_calculate_print_size(json_t* json, int pretty_print) {
             json_iter_free(iter);
         } else if (stack->v->type == JSON_ARRAY) {
             int count = 0;
-            json_t* arr = stack->v->data;
+            json_t* arr = stack->v->data.object;
             void* iter = json_iter(arr, NULL, 0);
 
             while ( !json_next(iter, &k, &v) ) {

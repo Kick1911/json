@@ -20,6 +20,7 @@ json_value_parse(const char* s, const char** end, void** value) {
     switch(*s){
         case '{': {
             json_t* json;
+            union json_value_types data;
             char* e = other_end(s, "{}");
             if (!e) return JSON_PARSE_ERROR;
 
@@ -31,7 +32,8 @@ json_value_parse(const char* s, const char** end, void** value) {
             if (json_parse(json, s, e - s))
                 return JSON_PARSE_ERROR;
 
-            v = json_value_ref(json, type);
+            data.object = json;
+            v = json_value_ref(data, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
 
             s = e + 1;
@@ -40,6 +42,7 @@ json_value_parse(const char* s, const char** end, void** value) {
         case '"': {
             char* heap;
             char* e;
+            union json_value_types data;
 
             e = end_of_string(s);
             if (!e) return JSON_PARSE_ERROR;
@@ -55,7 +58,8 @@ json_value_parse(const char* s, const char** end, void** value) {
             s = e + 1;
 
             type = JSON_STRING;
-            v = json_value_ref(heap, type);
+            data.string = heap;
+            v = json_value_ref(data, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         } break;
 
@@ -63,6 +67,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             json_t* json_arr;
             substring_t* arr;
             json_type_t r;
+            union json_value_types data;
             int arr_len = 0, i;
             char* e;
 
@@ -96,43 +101,51 @@ json_value_parse(const char* s, const char** end, void** value) {
             s = e + 1;
             free(arr);
             type = JSON_ARRAY;
-            v = json_value_ref(json_arr, type);
-        }break;
+            data.object = json_arr;
+            v = json_value_ref(data, type);
+        } break;
 
-        case 't':
+        case 't': {
+            union json_value_types data;
             sscanf(s, "%s", str);
             if (strcmp(str, "true")) return JSON_PARSE_ERROR;
 
             s += 4; /* Length of true */
 
             type = JSON_BOOLEAN;
-            v = json_value((void*)1, type);
+            data.bool = 1;
+            v = json_value(data, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        break;
+        } break;
 
-        case 'f':
+        case 'f': {
+            union json_value_types data;
             sscanf(s, "%s", str);
             if (strcmp(str, "false")) return JSON_PARSE_ERROR;
 
             s += 5; /* Length of false */
 
             type = JSON_BOOLEAN;
-            v = json_value((void*)0, type);
+            data.bool = 0;
+            v = json_value(data, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        break;
+        } break;
 
-        case 'n':
+        case 'n': {
+            union json_value_types data;
             sscanf(s, "%s", str);
             if (strcmp(str, "null")) return JSON_PARSE_ERROR;
 
             s += 4; /* Length of null */
 
             type = JSON_NULL;
-            v = json_value(NULL, type);
+            data.null = NULL;
+            v = json_value(data, type);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        break;
+        } break;
 
         default: {
+            union json_value_types data;
             char* p_end;
 
             /* Integer and float */
@@ -143,13 +156,15 @@ json_value_parse(const char* s, const char** end, void** value) {
                 sscanf(s, "%lf", &_double);
 
                 type = JSON_FLOAT;
-                v = json_value(&_double, type);
+                data.floating_point = _double;
+                v = json_value(data, type);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             } else {
                 long int _long_int = strtol(s, &p_end, 10);
 
                 type = JSON_NUMERIC;
-                v = json_value(&_long_int, type);
+                data.numeric = _long_int;
+                v = json_value(data, type);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             }
             s += strlen(str);

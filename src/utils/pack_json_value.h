@@ -5,7 +5,7 @@
 #include <json.h>
 
 static json_value_t*
-pack_json_value(void* value, size_t size, json_type_t type) {
+pack_json_value(union json_value_types value, size_t size, json_type_t type) {
     json_value_t* j_value = malloc(sizeof(json_value_t));
     j_value->data = value;
     j_value->size = size;

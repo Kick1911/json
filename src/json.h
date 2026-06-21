@@ -12,16 +12,26 @@ typedef enum {
     JSON_NUMERIC, JSON_FLOAT, JSON_BOOLEAN
 } json_type_t;
 
-typedef struct {
-    json_type_t type;
-    size_t size;
-    void* data;
-} json_value_t;
+typedef struct json json_t;
+union json_value_types {
+    char* string;
+    char* null;
+    double floating_point;
+    uint8_t bool;
+    int64_t numeric;
+    json_t* object;
+};
 
 typedef struct {
     json_type_t type;
+    size_t size;
+    union json_value_types data;
+} json_value_t;
+
+struct json {
+    json_type_t type;
     void* hash_table; /* ptree_t */
-} json_t;
+};
 
 int
 json_init(json_t*, json_type_t);
@@ -42,10 +52,10 @@ int
 json_parse_file(json_t*, const char* file_path);
 
 json_value_t*
-json_value(void* data, json_type_t);
+json_value(union json_value_types data, json_type_t);
 
 json_value_t*
-json_value_ref(void* data, json_type_t);
+json_value_ref(union json_value_types data, json_type_t);
 
 int
 json_set(json_t* j, const char* key, json_value_t* v, json_value_t**);
