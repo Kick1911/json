@@ -11,23 +11,29 @@ void test_interface(){
     json_value_t* kick_json_value;
     json_value_t* remainder;
     json_t json, json2;
+    union json_value_types data;
     double f = 3.14;
     char str[] = "I am Kick", *kick_str;
 
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
 
-    T_ASSERT(!json_set(&json2, "a", json_value(&f, JSON_FLOAT), NULL));
-    T_ASSERT(!json_set(&json, "kick", json_value(&json2, JSON_OBJECT), NULL));
+    data.floating_point = f;
+    T_ASSERT(!json_set(&json2, "a", json_value(data, JSON_FLOAT), NULL));
+
+    data.object = &json2;
+    T_ASSERT(!json_set(&json, "kick", json_value(data, JSON_OBJECT), NULL));
     T_ASSERT_NUM(json_set(&json, "", NULL, NULL), 1);
     T_ASSERT(!json_get(&json, "no_exists"));
     T_ASSERT(!json_delete(&json, "no_exists"));
 
-    kick_json = json_get(&json, "kick")->data;
+    kick_json = json_get(&json, "kick")->data.object;
     T_ASSERT(kick_json);
-    T_ASSERT_FLOAT(*((double*)json_get(kick_json, "a")->data), 3.14);
-    T_ASSERT(!json_set(&json, "kick", json_value(str, JSON_STRING), &remainder));
-    T_ASSERT_FLOAT(*((double*)json_get(remainder->data, "a")->data), 3.14);
+    T_ASSERT_FLOAT(json_get(kick_json, "a")->data.floating_point, 3.14);
+
+    data.string = str;
+    T_ASSERT(!json_set(&json, "kick", json_value(data, JSON_STRING), &remainder));
+    T_ASSERT_FLOAT(json_get(remainder->data.object, "a")->data.floating_point, 3.14);
     json_value_free(remainder);
 
     kick_json_value = json_delete(&json, "kick");
@@ -49,39 +55,49 @@ void test_interator(){
     double d = 3.14;
     char* k = NULL;
     json_value_t* v = NULL;
+    union json_value_types data;
 
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
 
-    json_set(&json, "a", json_value((char*)0, JSON_BOOLEAN), NULL);
-    json_set(&json, "c", json_value((char*)1, JSON_BOOLEAN), NULL);
-    json_set(&json, "b\"", json_value(&b, JSON_NUMERIC), NULL);
-    json_set(&json, "d", json_value(&d, JSON_FLOAT), NULL);
-    json_set(&json, "Kick", json_value(NULL, JSON_NULL), NULL);
+    data.bool = 0;
+    json_set(&json, "a", json_value(data, JSON_BOOLEAN), NULL);
+
+    data.bool = 1;
+    json_set(&json, "c", json_value(data, JSON_BOOLEAN), NULL);
+
+    data.numeric = b;
+    json_set(&json, "b\"", json_value(data, JSON_NUMERIC), NULL);
+
+    data.floating_point = d;
+    json_set(&json, "d", json_value(data, JSON_FLOAT), NULL);
+
+    data.null = NULL;
+    json_set(&json, "Kick", json_value(data, JSON_NULL), NULL);
 
     v = json_get(&json, "b\"");
-    T_ASSERT_NUM(*((long int*)v->data), 135);
+    T_ASSERT_NUM(v->data.numeric, 135);
 
     iter = json_iter(&json, NULL, 0);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "a");
-    T_ASSERT(!(long int)v->data);
+    T_ASSERT(!v->data.numeric);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "c");
-    T_ASSERT((long int)v->data);
+    T_ASSERT(v->data.numeric);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "b\\\"");
-    T_ASSERT_NUM(*((long int*)v->data), 135);
+    T_ASSERT_NUM(v->data.numeric, 135);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "d");
-    T_ASSERT_FLOAT(*((double*)v->data), 3.14);
+    T_ASSERT_FLOAT(v->data.floating_point, 3.14);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "Kick");
-    T_ASSERT(!v->data);
+    T_ASSERT(!v->data.null);
 
     T_ASSERT(json_next(iter, &k, &v));
     json_free(&json);
