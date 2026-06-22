@@ -13,7 +13,7 @@
 static json_type_t
 json_value_parse(const char* s, const char** end, void** value) {
     char str[255];
-    size_t length = 0;
+    int64_t length = 0;
     void* v = NULL;
     json_type_t type;
 
@@ -29,7 +29,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             json = malloc(sizeof(json_t));
             if (!json) return JSON_MEMORY_ALLOC_ERROR;
 
-            if (json_parse(json, s, e - s))
+            if (json_parse(json, s, (size_t)(e - s)))
                 return JSON_PARSE_ERROR;
 
             data.object = json;
@@ -48,11 +48,12 @@ json_value_parse(const char* s, const char** end, void** value) {
             if (!e) return JSON_PARSE_ERROR;
             s++; /* skip openning double quote */
             length = e - s;
+            if (length < 0) return JSON_PARSE_ERROR;
 
-            heap = malloc(sizeof(char) * (length + 1));
+            heap = malloc(sizeof(char) * (size_t)(length + 1));
             if (!heap) return JSON_MEMORY_ALLOC_ERROR;
 
-            strncpy(heap, s, length);
+            strncpy(heap, s, (size_t)length);
             heap[length] = 0;
 
             s = e + 1;
@@ -68,7 +69,8 @@ json_value_parse(const char* s, const char** end, void** value) {
             substring_t* arr;
             json_type_t r;
             union json_value_types data;
-            int arr_len = 0, i;
+            size_t arr_len = 0;
+            size_t i;
             char* e;
 
             e = other_end(s, "[]");
@@ -84,8 +86,8 @@ json_value_parse(const char* s, const char** end, void** value) {
                 return JSON_MEMORY_ALLOC_ERROR;
 
             i = 0; while ( i < arr_len ) {
-                void* value = NULL;
-                r = json_value_parse(arr[i].start, NULL, &value);
+                void* _value = NULL;
+                r = json_value_parse(arr[i].start, NULL, &_value);
                 switch (r) {
                     case JSON_PARSE_ERROR:
                     case JSON_MEMORY_ALLOC_ERROR:
@@ -94,7 +96,7 @@ json_value_parse(const char* s, const char** end, void** value) {
                     default:
                     break;
                 }
-                if (json_set_num(json_arr, i, value, NULL))
+                if (json_set_num(json_arr, (int64_t)i, _value, NULL))
                     return JSON_PARSE_ERROR;
                 i++;
             }
@@ -180,7 +182,7 @@ json_value_parse(const char* s, const char** end, void** value) {
 int
 json_parse(json_t* json, const char* start, size_t len) {
     json_type_t ret;
-    size_t key_start = 0, value_start = 0;
+    long key_start = 0, value_start = 0;
     char* ptr;
     char key[JSON_KEY_LIMIT] = {0};
     const char* s = start, *e = start + len, *value_end = NULL;
@@ -258,21 +260,25 @@ int
 json_parse_file(json_t* json, const char* file_path) {
     FILE* f;
     char* str;
-    size_t size = 0, ret;
+    int ret;
+    long size = 0;
+    size_t read_bytes = 0;
 
     if (!(f = fopen(file_path, "r"))) return 1;
 
     fseek(f, 0, SEEK_END);
     size = ftell(f);
     fseek(f, 0, SEEK_SET);
+    if (size < 0)
+        goto failed_ftell;
 
-    str = malloc(sizeof(char) * (size + 1));
+    str = malloc(sizeof(char) * (size_t)(size + 1));
     if(!str) goto failed_after_fopen;
 
-    ret = fread(str, sizeof(char), size, f);
-    str[ret] = 0;
+    read_bytes = fread(str, sizeof(char), (size_t)size, f);
+    str[read_bytes] = 0;
 
-    ret = json_parse(json, str, ret);
+    ret = json_parse(json, str, read_bytes);
     if(ret) goto failed_parsing;
 
     free(str);
@@ -284,7 +290,8 @@ failed_after_fopen:
     return 2;
 
 failed_parsing:
-    fclose(f);
     free(str);
-    return ret;
+failed_ftell:
+    fclose(f);
+    return 2;
 }

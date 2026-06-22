@@ -2,9 +2,9 @@
 #define _UTILS_XMEMSET_H
 
 static void*
-xmemset(void *s, int c, size_t n) {
-    unsigned char* p = s, ch = c;
-    while( n-- && (*p++ = ch) );
+xmemset(void *s, unsigned char c, unsigned long n) {
+    unsigned char* p = s;
+    while( n-- && (*p++ = c) );
     return p;
 }
 

@@ -1,17 +1,23 @@
 #ifndef _UTILS_SPLIT_STR_ARRAY_H
 #define _UTILS_SPLIT_STR_ARRAY_H
 
+#include <malloc.h>
+#include <string.h>
+#include <utils/types.h>
+#include <utils/parser_utils.h>
+
 /** TODO: Proper tests on this. This function will fail if it cannot find the end */
 static substring_t*
-split_str_array(const char* s, const char* e, int* length) {
-    int i = 0, arr_size = 10;
+split_str_array(const char* s, const char* e, size_t* length) {
+    size_t arr_size = 10;
+    size_t i = 0;
     const char* p = s;
     substring_t* arr = (substring_t*)calloc(sizeof(substring_t), arr_size);
-    if(!arr) return NULL;
+    if (!arr) return NULL;
 
-    while(++p < e){
+    while (++p < e) {
         char* start = NULL, *end = NULL;
-        switch(*p){
+        switch (*p) {
             case '{':
                 start = (char*)p;
                 end = other_end(p, "{}");
@@ -34,7 +40,7 @@ split_str_array(const char* s, const char* e, int* length) {
             case '6':
             case '7':
             case '8':
-            case '9':{
+            case '9': {
                 char str[255];
                 sscanf(p, "%s", str);
                 start = (char*)p;
@@ -42,16 +48,16 @@ split_str_array(const char* s, const char* e, int* length) {
             }
             break;
         }
-        if(start && end){
-            if(arr[i].start) return NULL;
+        if (start && end) {
+            if (arr[i].start) return NULL;
             arr[i].start = start;
             arr[i].end = end;
             p = end;
             i++;
-            if(i >= arr_size){
+            if (i >= arr_size) {
                 arr_size += arr_size;
                 arr = (substring_t*)realloc(arr, sizeof(substring_t) * arr_size);
-                if(!arr) return NULL;
+                if (!arr) return NULL;
             }
         }
     }

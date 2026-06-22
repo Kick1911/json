@@ -37,7 +37,7 @@ void test_interface(){
     json_value_free(remainder);
 
     kick_json_value = json_delete(&json, "kick");
-    kick_str = kick_json_value->data;
+    kick_str = kick_json_value->data.string;
     free(kick_json_value);
 
     T_ASSERT(kick_str);
