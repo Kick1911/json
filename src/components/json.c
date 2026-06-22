@@ -163,7 +163,7 @@ json_set(json_t* j, const char* key, json_value_t* v, json_value_t** remainder) 
 }
 
 int
-json_set_num(json_t* j, const int64_t key, json_value_t* v, json_value_t** remainder) {
+json_set_num(json_t* j, const uint64_t key, json_value_t* v, json_value_t** remainder) {
     return p_insert_num(j->hash_table, key, v, (void**)remainder);
 }
 

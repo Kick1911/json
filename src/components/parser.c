@@ -96,7 +96,7 @@ json_value_parse(const char* s, const char** end, void** value) {
                     default:
                     break;
                 }
-                if (json_set_num(json_arr, (int64_t)i, _value, NULL))
+                if (json_set_num(json_arr, i, _value, NULL))
                     return JSON_PARSE_ERROR;
                 i++;
             }
