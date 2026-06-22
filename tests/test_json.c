@@ -305,14 +305,14 @@ int
 main(void){
     (void) SUITE_SETUP_RESULT;
 
-    /* TEST(JSON interface, test_interface);
-    TEST(JSON iterator, test_interator); */
+    TEST(JSON interface, test_interface);
+    TEST(JSON iterator, test_interator);
     TEST(JSON array, test_array);
-    /* T_SUITE(JSON Dump,
+    T_SUITE(JSON Dump,
         TEST(Basic, basic_json_dump);
         TEST(Stress test, stress_json_dump);
     );
-    TEST(JSON Reference, test_json_reference); */
+    TEST(JSON Reference, test_json_reference);
 
     T_CONCLUDE();
     return 0;
