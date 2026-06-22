@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <json.h>
 
-void test_interface(){
+void test_interface(void){
     json_t* kick_json;
     json_value_t* kick_json_value;
     json_value_t* remainder;
@@ -44,7 +44,7 @@ void test_interface(){
     json_free(&json2);
 }
 
-void test_interator(){
+void test_interator(void){
     void* iter;
     json_t json;
     long int b = 135;
@@ -61,7 +61,7 @@ void test_interator(){
     json_set(&json, "Kick", json_value_null(), NULL);
 
     v = json_get(&json, "b\"");
-    T_ASSERT_NUM(v->data.numeric, 135);
+    T_ASSERT_LONG(v->data.numeric, 135L);
 
     iter = json_iter(&json, NULL, 0);
 
@@ -75,7 +75,7 @@ void test_interator(){
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "b\\\"");
-    T_ASSERT_NUM(v->data.numeric, 135);
+    T_ASSERT_LONG(v->data.numeric, 135L);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "d");
@@ -90,7 +90,7 @@ void test_interator(){
     json_iter_free(iter);
 }
 
-void test_array(){
+void test_array(void){
     char* res;
     json_value_t* value;
     json_t json;
@@ -114,26 +114,26 @@ void test_array(){
      */
     res = json_dump(&json, 1);
     T_ASSERT_STRING(res, "[\n    \"I am Kick\",\n    3.140000\n]");
-    T_ASSERT_NUM(json_calculate_print_size(&json, 1), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&json, 1), strlen(res));
     free(res);
 
     /* ["I am Kick", 3.140000] */
     res = json_dump(&json, 0);
     T_ASSERT_STRING(res, "[\"I am Kick\", 3.140000]");
-    T_ASSERT_NUM(json_calculate_print_size(&json, 0), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&json, 0), strlen(res));
     free(res);
 
-    T_ASSERT_NUM(json_size(&json), 2);
+    T_ASSERT_LONG(json_size(&json), 2L);
 
     value = json_arr_pop(&json);
     T_ASSERT_DOUBLE(value->data.floating_point, 3.14);
     json_value_free(value);
-    T_ASSERT_NUM(json_size(&json), 1);
+    T_ASSERT_LONG(json_size(&json), 1L);
 
     value = json_arr_pop(&json);
     T_ASSERT_STRING(value->data.string, "I am Kick");
     json_value_free(value);
-    T_ASSERT_NUM(json_size(&json), 0);
+    T_ASSERT_LONG(json_size(&json), 0L);
 
     T_ASSERT(!json_arr_pop(&json));
     T_ASSERT(!json_arr_pop(&json));
@@ -142,7 +142,7 @@ void test_array(){
 }
 
 void
-stress_json_dump() {
+stress_json_dump(void) {
     long int i;
     char* res;
     json_t arr;
@@ -176,7 +176,7 @@ stress_json_dump() {
     time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     printf("Time taken json_dump(0): %f seconds\n", time_spent);
 
-    T_ASSERT_NUM(json_calculate_print_size(&arr, 0), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&arr, 0), strlen(res));
     free(res);
 
     start_time = clock();
@@ -186,7 +186,7 @@ stress_json_dump() {
     time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     printf("Time taken json_dump(1): %f seconds\n", time_spent);
 
-    T_ASSERT_NUM(json_calculate_print_size(&arr, 1), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&arr, 1), strlen(res));
     free(res);
 
     start_time = clock();
@@ -198,7 +198,7 @@ stress_json_dump() {
 }
 
 void
-basic_json_dump() {
+basic_json_dump(void) {
     char* res;
     json_t json, json2, *arr;
     long int d = 5432543;
@@ -219,14 +219,14 @@ basic_json_dump() {
 
     /* {"number": 5432543} */
     res = json_dump(&json2, 0);
-    T_ASSERT_NUM(json_calculate_print_size(&json2, 0), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&json2, 0), strlen(res));
     free(res);
     /* {                        2 char
      *     "number": 5432543    22 char
      * }                        1 char, total: 25
      */
     res = json_dump(&json2, 1);
-    T_ASSERT_NUM(json_calculate_print_size(&json2, 1), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&json2, 1), strlen(res));
     free(res);
     /* {                            2 char
      *     "kickness": [            18 char
@@ -240,11 +240,11 @@ basic_json_dump() {
      * }                            1 char, total: 135 This is wrong??
      */
     res = json_dump(&json, 1);
-    T_ASSERT_NUM(json_calculate_print_size(&json, 1), 143);
+    T_ASSERT_LONG(json_calculate_print_size(&json, 1), 143L);
     free(res);
     /* {"kickness": ["I am Kick", 3.140000], "boolean": true, "object": {"number": 5432543}} */
     res = json_dump(&json, 0);
-    T_ASSERT_NUM(json_calculate_print_size(&json, 0), strlen(res));
+    T_ASSERT_LONG(json_calculate_print_size(&json, 0), strlen(res));
     free(res);
     /* {                            2 char
      *     "object": {              16 char
@@ -253,10 +253,10 @@ basic_json_dump() {
      * }                            1 char, total: 51
      */
 
-    T_ASSERT_NUM(json_get_num(arr, 0)->size, 11); /* String size */
-    T_ASSERT_NUM(json_get_num(arr, 1)->size, 8); /* Float size */
-    T_ASSERT_NUM(json_get(&json2, "number")->size, 7); /* Number size */
-    T_ASSERT_NUM(json_get(&json, "boolean")->size, 4); /* Boolean size */
+    T_ASSERT_LONG(json_get_num(arr, 0)->size, 11L); /* String size */
+    T_ASSERT_LONG(json_get_num(arr, 1)->size, 8L); /* Float size */
+    T_ASSERT_LONG(json_get(&json2, "number")->size, 7L); /* Number size */
+    T_ASSERT_LONG(json_get(&json, "boolean")->size, 4L); /* Boolean size */
 
     res = json_dump(&json, 0);
     T_ASSERT_STRING(res, "{\"kickness\": [\"I am Kick\", 3.140000], \"boolean\": true, \"object\": {\"number\": 5432543}}");
@@ -280,7 +280,7 @@ basic_json_dump() {
 }
 
 void
-test_json_reference() {
+test_json_reference(void) {
     long int record_index = 21;
     long int len = 243;
     long int ret = 33;
@@ -304,14 +304,14 @@ test_json_reference() {
 int
 main(void){
 
-    TEST(JSON interface, test_interface());
-    TEST(JSON iterator, test_interator());
-    TEST(JSON array, test_array());
+    TEST(JSON interface, test_interface);
+    TEST(JSON iterator, test_interator);
+    TEST(JSON array, test_array);
     T_SUITE(JSON Dump,
-        TEST(Basic, basic_json_dump());
-        TEST(Stress test, stress_json_dump());
+        TEST(Basic, basic_json_dump);
+        TEST(Stress test, stress_json_dump);
     );
-    TEST(JSON Reference, test_json_reference());
+    TEST(JSON Reference, test_json_reference);
 
     T_CONCLUDE();
     return 0;
