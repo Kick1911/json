@@ -9,6 +9,7 @@
 
 #include <utils/simple_json_set.h>
 #include <utils/pack_json_value.h>
+#include <utils/json_clone.h>
 #include <utils/xmemset.h>
 #include <utils/stack.h>
 #include <utils/xstrrchr.h>
@@ -32,105 +33,84 @@ json_print_value(char*, json_value_t*, unsigned int, unsigned int);
 static void
 json_value_free_cb(void* n);
 
-static size_t
-count_digits(int64_t n) {
-    size_t c;
+json_value_t*
+json_value_numeric(int64_t n) {
+    union json_value_types data;
 
-    if(!n) return 1;
-
-    c = 1;
-    while ( (n = n/10) ) c++;
-    return c;
-}
-
-static json_t*
-json_clone(const json_t* j, json_type_t type) {
-    void* iter, *n;
-    char* k = NULL;
-    json_value_t* v = NULL;
-
-    iter = json_iter(j, NULL, 0);
-
-    n =  malloc(sizeof(json_t));
-    if (!n) return NULL;
-
-    if (json_init(n, type))
-        goto failed;
-
-    while (!json_next(iter, &k, &v))
-        simple_json_set(n, k, json_value(v->data, v->type), NULL);
-
-    json_iter_free(iter);
-    return n;
-
-failed:
-    free(n);
-    return NULL;
-}
-
-static json_value_t*
-make_json_value(union json_value_types data, json_type_t type, int by_ref) {
-    size_t size = 0;
-    union json_value_types value;
-
-    switch(type) {
-        case JSON_NUMERIC:
-            size = count_digits(data.numeric);
-            size += (data.numeric >= 0) ? 0: 1;
-            value = data;
-        break;
-
-        case JSON_FLOAT:
-            size = 7 + count_digits(data.numeric);
-            size += (data.floating_point >= 0) ? 0: 1;
-            value = data;
-        break;
-
-        case JSON_BOOLEAN:
-            size = (data.bool) ? 4: 5;
-            value = data;
-        break;
-
-        case JSON_NULL:
-            size = 8; /* 6 + 2 for quotes */
-            value.null = NULL;
-        break;
-
-        case JSON_ARRAY:
-        case JSON_OBJECT:
-            if (by_ref) value = data;
-            else value.object = json_clone(data.object, type);
-        break;
-
-        case JSON_STRING: {
-            size = strlen(data.string);
-
-            if (by_ref) value = data;
-            else {
-                value.string = malloc(sizeof(char) * (size + 1));
-                if(!value.string) goto failed;
-                memcpy(value.string, data.string, size);
-            }
-            size += 2; /* Plus 2 quotes */
-        } break;
-        default:
-            return NULL;
-    }
-
-    return pack_json_value(value, size, type);
-
-    failed:
-    return NULL;
+    data.numeric = n;
+    return make_json_value(data, JSON_NUMERIC, 0);
 }
 
 json_value_t*
-json_value(union json_value_types data, json_type_t type) {
-    return make_json_value(data, type, 0);
+json_value_float(double f) {
+    union json_value_types data;
+
+    data.floating_point = f;
+    return make_json_value(data, JSON_FLOAT, 0);
 }
 
 json_value_t*
-json_value_ref(union json_value_types data, json_type_t type) {
-    return make_json_value(data, type, 1);
+json_value_string(char* s) {
+    union json_value_types data;
+
+    data.string = s;
+    return make_json_value(data, JSON_STRING, 0);
+}
+
+json_value_t*
+json_value_null(void) {
+    union json_value_types data;
+
+    data.null = NULL;
+    return make_json_value(data, JSON_NULL, 0);
+}
+
+json_value_t*
+json_value_bool(uint8_t b) {
+    union json_value_types data;
+
+    data.bool = !!b;
+    return make_json_value(data, JSON_BOOLEAN, 0);
+}
+
+json_value_t*
+json_value_object(json_t* object) {
+    union json_value_types data;
+
+    data.object = object;
+    return make_json_value(data, JSON_OBJECT, 0);
+}
+
+json_value_t*
+json_value_array(json_t* array) {
+    union json_value_types data;
+
+    data.object = array;
+    return make_json_value(data, JSON_ARRAY, 0);
+}
+
+json_value_t*
+json_value_object_ref(json_t* object) {
+    union json_value_types data;
+
+    data.object = object;
+    return make_json_value(data, JSON_OBJECT, 1);
+}
+
+json_value_t*
+json_value_array_ref(json_t* array) {
+    union json_value_types data;
+
+    data.object = array;
+    return make_json_value(data, JSON_ARRAY, 1);
+}
+
+json_value_t*
+json_value_string_ref(char* string) {
+    union json_value_types data;
+
+    data.string = string;
+    return make_json_value(data, JSON_STRING, 1);
 }
 
 static char*
@@ -436,7 +416,7 @@ json_calculate_print_size(json_t* json, unsigned int pretty_print) {
 
     dl_init(&dl);
     data.object = json;
-    json_wrap = json_value_ref(data, json->type);
+    json_wrap = make_json_value(data, json->type, 1);
 
     unit = malloc(sizeof(struct json_stack_unit));
     unit->v = json_wrap;

@@ -52,10 +52,34 @@ int
 json_parse_file(json_t*, const char* file_path);
 
 json_value_t*
-json_value(union json_value_types data, json_type_t);
+json_value_numeric(int64_t n);
 
 json_value_t*
-json_value_ref(union json_value_types data, json_type_t);
+json_value_float(double f);
+
+json_value_t*
+json_value_string(char* s);
+
+json_value_t*
+json_value_null(void);
+
+json_value_t*
+json_value_bool(uint8_t b);
+
+json_value_t*
+json_value_object(json_t* object);
+
+json_value_t*
+json_value_array(json_t* array);
+
+json_value_t*
+json_value_object_ref(json_t* object);
+
+json_value_t*
+json_value_array_ref(json_t* array);
+
+json_value_t*
+json_value_string_ref(char* string);
 
 int
 json_set(json_t* j, const char* key, json_value_t* v, json_value_t**);

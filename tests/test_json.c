@@ -11,18 +11,15 @@ void test_interface(){
     json_value_t* kick_json_value;
     json_value_t* remainder;
     json_t json, json2;
-    union json_value_types data;
     double f = 3.14;
     char str[] = "I am Kick", *kick_str;
 
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
 
-    data.floating_point = f;
-    T_ASSERT(!json_set(&json2, "a", json_value(data, JSON_FLOAT), NULL));
+    T_ASSERT(!json_set(&json2, "a", json_value_float(f), NULL));
 
-    data.object = &json2;
-    T_ASSERT(!json_set(&json, "kick", json_value(data, JSON_OBJECT), NULL));
+    T_ASSERT(!json_set(&json, "kick", json_value_object(&json2), NULL));
     T_ASSERT_NUM(json_set(&json, "", NULL, NULL), 1);
     T_ASSERT(!json_get(&json, "no_exists"));
     T_ASSERT(!json_delete(&json, "no_exists"));
@@ -31,8 +28,7 @@ void test_interface(){
     T_ASSERT(kick_json);
     T_ASSERT_FLOAT(json_get(kick_json, "a")->data.floating_point, 3.14);
 
-    data.string = str;
-    T_ASSERT(!json_set(&json, "kick", json_value(data, JSON_STRING), &remainder));
+    T_ASSERT(!json_set(&json, "kick", json_value_string(str), &remainder));
     T_ASSERT_FLOAT(json_get(remainder->data.object, "a")->data.floating_point, 3.14);
     json_value_free(remainder);
 
@@ -55,24 +51,14 @@ void test_interator(){
     double d = 3.14;
     char* k = NULL;
     json_value_t* v = NULL;
-    union json_value_types data;
 
     T_ASSERT_NUM(json_init(&json, JSON_OBJECT), 0);
 
-    data.bool = 0;
-    json_set(&json, "a", json_value(data, JSON_BOOLEAN), NULL);
-
-    data.bool = 1;
-    json_set(&json, "c", json_value(data, JSON_BOOLEAN), NULL);
-
-    data.numeric = b;
-    json_set(&json, "b\"", json_value(data, JSON_NUMERIC), NULL);
-
-    data.floating_point = d;
-    json_set(&json, "d", json_value(data, JSON_FLOAT), NULL);
-
-    data.null = NULL;
-    json_set(&json, "Kick", json_value(data, JSON_NULL), NULL);
+    json_set(&json, "a", json_value_bool(0), NULL);
+    json_set(&json, "c", json_value_bool(1), NULL);
+    json_set(&json, "b\"", json_value_numeric(b), NULL);
+    json_set(&json, "d", json_value_float(d), NULL);
+    json_set(&json, "Kick", json_value_null(), NULL);
 
     v = json_get(&json, "b\"");
     T_ASSERT_NUM(v->data.numeric, 135);
@@ -118,8 +104,8 @@ void test_array(){
      *          json_value(&f, JSON_FLOAT),
      *          NULL};
      */
-    json_arr_append(&json, json_value(str, JSON_STRING));
-    json_arr_append(&json, json_value(&f, JSON_FLOAT));
+    json_arr_append(&json, json_value_string(str));
+    json_arr_append(&json, json_value_float(f));
 
     /* [                        2 char
      *     "I am Kick",         17 char
@@ -140,12 +126,12 @@ void test_array(){
     T_ASSERT_NUM(json_size(&json), 2);
 
     value = json_arr_pop(&json);
-    T_ASSERT_DOUBLE(*((double*)value->data), 3.14);
+    T_ASSERT_DOUBLE(value->data.floating_point, 3.14);
     json_value_free(value);
     T_ASSERT_NUM(json_size(&json), 1);
 
     value = json_arr_pop(&json);
-    T_ASSERT_STRING((char*)value->data, "I am Kick");
+    T_ASSERT_STRING(value->data.string, "I am Kick");
     json_value_free(value);
     T_ASSERT_NUM(json_size(&json), 0);
 
@@ -172,9 +158,10 @@ stress_json_dump() {
 
         json = malloc(sizeof(json_t));
         T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
-        json_set(json, "id", json_value(&i, JSON_NUMERIC), NULL);
-        json_set(json, "line_data", json_value(&two_times, JSON_NUMERIC), NULL);
-        json_arr_append(&arr, json_value_ref(json, JSON_OBJECT));
+
+        json_set(json, "id", json_value_numeric(i), NULL);
+        json_set(json, "line_data", json_value_numeric(two_times), NULL);
+        json_arr_append(&arr, json_value_object_ref(json));
 
         i++;
     }
@@ -223,12 +210,12 @@ basic_json_dump() {
     T_ASSERT_NUM(json_init(&json2, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(arr, JSON_ARRAY), 0);
 
-    json_set_num(arr, 0, json_value(str, JSON_STRING), NULL);
-    json_set_num(arr, 1, json_value(&f, JSON_FLOAT), NULL);
-    json_set(&json, "kickness", json_value_ref(arr, JSON_ARRAY), NULL);
-    json_set(&json, "boolean", json_value((char*)1, JSON_BOOLEAN), NULL);
-    json_set(&json2, "number", json_value(&d, JSON_NUMERIC), NULL);
-    json_set(&json, "object", json_value(&json2, JSON_OBJECT), NULL);
+    json_set_num(arr, 0, json_value_string(str), NULL);
+    json_set_num(arr, 1, json_value_float(f), NULL);
+    json_set(&json, "kickness", json_value_array_ref(arr), NULL);
+    json_set(&json, "boolean", json_value_bool(1), NULL);
+    json_set(&json2, "number", json_value_numeric(d), NULL);
+    json_set(&json, "object", json_value_object(&json2), NULL);
 
     /* {"number": 5432543} */
     res = json_dump(&json2, 0);
@@ -305,10 +292,10 @@ test_json_reference() {
     T_ASSERT_NUM(json_init(json, JSON_OBJECT), 0);
     T_ASSERT_NUM(json_init(inner_json, JSON_OBJECT), 0);
 
-    json_set(inner_json, "file-seek", json_value(&record_index, JSON_NUMERIC), NULL);
-    json_set(inner_json, "size", json_value(&len, JSON_NUMERIC), NULL);
-    json_set(inner_json, "compressed-size", json_value(&ret, JSON_NUMERIC), NULL);
-    json_set(json, "key name", json_value_ref(inner_json, JSON_OBJECT), NULL);
+    json_set(inner_json, "file-seek", json_value_numeric(record_index), NULL);
+    json_set(inner_json, "size", json_value_numeric(len), NULL);
+    json_set(inner_json, "compressed-size", json_value_numeric(ret), NULL);
+    json_set(json, "key name", json_value_object_ref(inner_json), NULL);
 
     json_free(json);
     free(json);

@@ -14,17 +14,13 @@ static json_type_t
 json_value_parse(const char* s, const char** end, void** value) {
     char str[255];
     int64_t length = 0;
-    void* v = NULL;
-    json_type_t type;
+    json_value_t* v = NULL;
 
     switch(*s){
         case '{': {
             json_t* json;
-            union json_value_types data;
             char* e = other_end(s, "{}");
             if (!e) return JSON_PARSE_ERROR;
-
-            type = JSON_OBJECT;
 
             json = malloc(sizeof(json_t));
             if (!json) return JSON_MEMORY_ALLOC_ERROR;
@@ -32,8 +28,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             if (json_parse(json, s, (size_t)(e - s)))
                 return JSON_PARSE_ERROR;
 
-            data.object = json;
-            v = json_value_ref(data, type);
+            v = json_value_object_ref(json);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
 
             s = e + 1;
@@ -42,7 +37,6 @@ json_value_parse(const char* s, const char** end, void** value) {
         case '"': {
             char* heap;
             char* e;
-            union json_value_types data;
 
             e = end_of_string(s);
             if (!e) return JSON_PARSE_ERROR;
@@ -58,9 +52,7 @@ json_value_parse(const char* s, const char** end, void** value) {
 
             s = e + 1;
 
-            type = JSON_STRING;
-            data.string = heap;
-            v = json_value_ref(data, type);
+            v = json_value_string_ref(heap);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         } break;
 
@@ -68,7 +60,6 @@ json_value_parse(const char* s, const char** end, void** value) {
             json_t* json_arr;
             substring_t* arr;
             json_type_t r;
-            union json_value_types data;
             size_t arr_len = 0;
             size_t i;
             char* e;
@@ -102,52 +93,40 @@ json_value_parse(const char* s, const char** end, void** value) {
             }
             s = e + 1;
             free(arr);
-            type = JSON_ARRAY;
-            data.object = json_arr;
-            v = json_value_ref(data, type);
+            v = json_value_array_ref(json_arr);
         } break;
 
-        case 't': {
-            union json_value_types data;
+        case 't':
             sscanf(s, "%s", str);
             if (strcmp(str, "true")) return JSON_PARSE_ERROR;
 
             s += 4; /* Length of true */
 
-            type = JSON_BOOLEAN;
-            data.bool = 1;
-            v = json_value(data, type);
+            v = json_value_bool(1);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        } break;
+        break;
 
-        case 'f': {
-            union json_value_types data;
+        case 'f':
             sscanf(s, "%s", str);
             if (strcmp(str, "false")) return JSON_PARSE_ERROR;
 
             s += 5; /* Length of false */
 
-            type = JSON_BOOLEAN;
-            data.bool = 0;
-            v = json_value(data, type);
+            v = json_value_bool(0);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        } break;
+        break;
 
-        case 'n': {
-            union json_value_types data;
+        case 'n':
             sscanf(s, "%s", str);
             if (strcmp(str, "null")) return JSON_PARSE_ERROR;
 
             s += 4; /* Length of null */
 
-            type = JSON_NULL;
-            data.null = NULL;
-            v = json_value(data, type);
+            v = json_value_null();
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
-        } break;
+        break;
 
         default: {
-            union json_value_types data;
             char* p_end;
 
             /* Integer and float */
@@ -157,16 +136,12 @@ json_value_parse(const char* s, const char** end, void** value) {
 
                 sscanf(s, "%lf", &_double);
 
-                type = JSON_FLOAT;
-                data.floating_point = _double;
-                v = json_value(data, type);
+                v = json_value_float(_double);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             } else {
                 long int _long_int = strtol(s, &p_end, 10);
 
-                type = JSON_NUMERIC;
-                data.numeric = _long_int;
-                v = json_value(data, type);
+                v = json_value_numeric(_long_int);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             }
             s += strlen(str);
@@ -176,7 +151,7 @@ json_value_parse(const char* s, const char** end, void** value) {
     if(end)
         *end = s;
     *value = v;
-    return type;
+    return v->type;
 }
 
 int
