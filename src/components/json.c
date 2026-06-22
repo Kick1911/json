@@ -332,7 +332,7 @@ _json_dump(json_t* json, unsigned int pretty_print, unsigned int level) {
         ptr = xmemset(ptr, '\n', pretty_print);
         ptr = xmemset(ptr, TAB_CH, pretty_print * level * TAB_CH_COUNT);
 
-        if (json->type ==  JSON_OBJECT)
+        if (json->type == JSON_OBJECT)
             ptr += sprintf(ptr, "\"%s\": ", k);
 
         ptr += json_print_value(ptr, v, pretty_print, level);
@@ -471,7 +471,7 @@ json_calculate_print_size(json_t* json, unsigned int pretty_print) {
                 }
                 if (pretty_print) size += 1; /* newline */
                 if (count++)
-                    size += (pretty_print)? 1 : 2; /* comma or comma + space */
+                    size += (pretty_print) ? 1 : 2; /* comma or comma + space */
             }
 
             json_iter_free(iter);

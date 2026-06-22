@@ -26,7 +26,7 @@ make_json_value(union json_value_types data, json_type_t type, int by_ref) {
     size_t size = 0;
     union json_value_types value;
 
-    switch(type) {
+    switch (type) {
         case JSON_NUMERIC:
             size = count_digits(data.numeric);
             size += (data.numeric >= 0) ? 0: 1;
@@ -34,7 +34,7 @@ make_json_value(union json_value_types data, json_type_t type, int by_ref) {
         break;
 
         case JSON_FLOAT:
-            size = 7 + count_digits(data.numeric);
+            size = 7 + count_digits((int64_t)data.floating_point);
             size += (data.floating_point >= 0) ? 0: 1;
             value = data;
         break;
@@ -63,6 +63,7 @@ make_json_value(union json_value_types data, json_type_t type, int by_ref) {
                 value.string = malloc(sizeof(char) * (size + 1));
                 if(!value.string) goto failed;
                 memcpy(value.string, data.string, size);
+                value.string[size] = 0;
             }
             size += 2; /* Plus 2 quotes */
         } break;

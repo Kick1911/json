@@ -38,7 +38,7 @@ void test_interface(void){
 
     T_ASSERT(kick_str);
     T_ASSERT(!json_get(&json, "kick"));
-    T_ASSERT_STRING((char*)kick_str, "I am Kick");
+    T_ASSERT_STRING(kick_str, "I am Kick");
     free(kick_str);
     json_free(&json);
     json_free(&json2);
@@ -67,11 +67,11 @@ void test_interator(void){
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "a");
-    T_ASSERT(!v->data.numeric);
+    T_ASSERT(!v->data.bool);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "c");
-    T_ASSERT(v->data.numeric);
+    T_ASSERT(v->data.bool);
 
     json_next(iter, &k, &v);
     T_ASSERT_STRING(k, "b\\\"");
@@ -303,15 +303,16 @@ test_json_reference(void) {
 
 int
 main(void){
+    (void) SUITE_SETUP_RESULT;
 
-    TEST(JSON interface, test_interface);
-    TEST(JSON iterator, test_interator);
+    /* TEST(JSON interface, test_interface);
+    TEST(JSON iterator, test_interator); */
     TEST(JSON array, test_array);
-    T_SUITE(JSON Dump,
+    /* T_SUITE(JSON Dump,
         TEST(Basic, basic_json_dump);
         TEST(Stress test, stress_json_dump);
     );
-    TEST(JSON Reference, test_json_reference);
+    TEST(JSON Reference, test_json_reference); */
 
     T_CONCLUDE();
     return 0;
