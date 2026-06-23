@@ -12,7 +12,7 @@ split_str_array(const char* s, const char* e, size_t* length) {
     size_t arr_size = 10;
     size_t i = 0;
     const char* p = s;
-    substring_t* arr = (substring_t*)calloc(sizeof(substring_t), arr_size);
+    substring_t* arr = (substring_t*)calloc(arr_size, sizeof(substring_t));
     if (!arr) return NULL;
 
     while (++p < e) {

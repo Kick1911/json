@@ -73,7 +73,7 @@ make_json_value(union json_value_types data, json_type_t type, int by_ref) {
 
     return pack_json_value(value, size, type);
 
-    failed:
+failed:
     return NULL;
 }
 
