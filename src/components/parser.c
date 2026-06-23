@@ -13,9 +13,8 @@
 static json_type_t
 json_value_parse(const char* s, const char** end, void** value) {
     char str[255];
-    size_t length = 0;
-    void* v = NULL;
-    json_type_t type;
+    int64_t length = 0;
+    json_value_t* v = NULL;
 
     switch(*s){
         case '{': {
@@ -23,15 +22,13 @@ json_value_parse(const char* s, const char** end, void** value) {
             char* e = other_end(s, "{}");
             if (!e) return JSON_PARSE_ERROR;
 
-            type = JSON_OBJECT;
-
             json = malloc(sizeof(json_t));
             if (!json) return JSON_MEMORY_ALLOC_ERROR;
 
-            if (json_parse(json, s, e - s))
+            if (json_parse(json, s, (size_t)(e - s)))
                 return JSON_PARSE_ERROR;
 
-            v = json_value_ref(json, type);
+            v = json_value_object_ref(json);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
 
             s = e + 1;
@@ -45,17 +42,17 @@ json_value_parse(const char* s, const char** end, void** value) {
             if (!e) return JSON_PARSE_ERROR;
             s++; /* skip openning double quote */
             length = e - s;
+            if (length < 0) return JSON_PARSE_ERROR;
 
-            heap = malloc(sizeof(char) * (length + 1));
+            heap = malloc(sizeof(char) * (size_t)(length + 1));
             if (!heap) return JSON_MEMORY_ALLOC_ERROR;
 
-            strncpy(heap, s, length);
+            strncpy(heap, s, (size_t)length);
             heap[length] = 0;
 
             s = e + 1;
 
-            type = JSON_STRING;
-            v = json_value_ref(heap, type);
+            v = json_value_string_ref(heap);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         } break;
 
@@ -63,7 +60,8 @@ json_value_parse(const char* s, const char** end, void** value) {
             json_t* json_arr;
             substring_t* arr;
             json_type_t r;
-            int arr_len = 0, i;
+            size_t arr_len = 0;
+            size_t i;
             char* e;
 
             e = other_end(s, "[]");
@@ -79,8 +77,8 @@ json_value_parse(const char* s, const char** end, void** value) {
                 return JSON_MEMORY_ALLOC_ERROR;
 
             i = 0; while ( i < arr_len ) {
-                void* value = NULL;
-                r = json_value_parse(arr[i].start, NULL, &value);
+                void* _value = NULL;
+                r = json_value_parse(arr[i].start, NULL, &_value);
                 switch (r) {
                     case JSON_PARSE_ERROR:
                     case JSON_MEMORY_ALLOC_ERROR:
@@ -89,15 +87,14 @@ json_value_parse(const char* s, const char** end, void** value) {
                     default:
                     break;
                 }
-                if (json_set_num(json_arr, i, value, NULL))
+                if (json_set_num(json_arr, i, _value, NULL))
                     return JSON_PARSE_ERROR;
                 i++;
             }
             s = e + 1;
             free(arr);
-            type = JSON_ARRAY;
-            v = json_value_ref(json_arr, type);
-        }break;
+            v = json_value_array_ref(json_arr);
+        } break;
 
         case 't':
             sscanf(s, "%s", str);
@@ -105,8 +102,7 @@ json_value_parse(const char* s, const char** end, void** value) {
 
             s += 4; /* Length of true */
 
-            type = JSON_BOOLEAN;
-            v = json_value((void*)1, type);
+            v = json_value_bool(1);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         break;
 
@@ -116,8 +112,7 @@ json_value_parse(const char* s, const char** end, void** value) {
 
             s += 5; /* Length of false */
 
-            type = JSON_BOOLEAN;
-            v = json_value((void*)0, type);
+            v = json_value_bool(0);
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         break;
 
@@ -127,8 +122,7 @@ json_value_parse(const char* s, const char** end, void** value) {
 
             s += 4; /* Length of null */
 
-            type = JSON_NULL;
-            v = json_value(NULL, type);
+            v = json_value_null();
             if (!v) return JSON_MEMORY_ALLOC_ERROR;
         break;
 
@@ -142,14 +136,12 @@ json_value_parse(const char* s, const char** end, void** value) {
 
                 sscanf(s, "%lf", &_double);
 
-                type = JSON_FLOAT;
-                v = json_value(&_double, type);
+                v = json_value_float(_double);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             } else {
                 long int _long_int = strtol(s, &p_end, 10);
 
-                type = JSON_NUMERIC;
-                v = json_value(&_long_int, type);
+                v = json_value_numeric(_long_int);
                 if(!v) return JSON_MEMORY_ALLOC_ERROR;
             }
             s += strlen(str);
@@ -159,13 +151,13 @@ json_value_parse(const char* s, const char** end, void** value) {
     if(end)
         *end = s;
     *value = v;
-    return type;
+    return v->type;
 }
 
 int
 json_parse(json_t* json, const char* start, size_t len) {
     json_type_t ret;
-    size_t key_start = 0, value_start = 0;
+    long key_start = 0, value_start = 0;
     char* ptr;
     char key[JSON_KEY_LIMIT] = {0};
     const char* s = start, *e = start + len, *value_end = NULL;
@@ -243,21 +235,25 @@ int
 json_parse_file(json_t* json, const char* file_path) {
     FILE* f;
     char* str;
-    size_t size = 0, ret;
+    int ret;
+    long size = 0;
+    size_t read_bytes = 0;
 
     if (!(f = fopen(file_path, "r"))) return 1;
 
     fseek(f, 0, SEEK_END);
     size = ftell(f);
     fseek(f, 0, SEEK_SET);
+    if (size < 0)
+        goto failed_ftell;
 
-    str = malloc(sizeof(char) * (size + 1));
+    str = malloc(sizeof(char) * (size_t)(size + 1));
     if(!str) goto failed_after_fopen;
 
-    ret = fread(str, sizeof(char), size, f);
-    str[ret] = 0;
+    read_bytes = fread(str, sizeof(char), (size_t)size, f);
+    str[read_bytes] = 0;
 
-    ret = json_parse(json, str, ret);
+    ret = json_parse(json, str, read_bytes);
     if(ret) goto failed_parsing;
 
     free(str);
@@ -269,7 +265,8 @@ failed_after_fopen:
     return 2;
 
 failed_parsing:
-    fclose(f);
     free(str);
-    return ret;
+failed_ftell:
+    fclose(f);
+    return 2;
 }

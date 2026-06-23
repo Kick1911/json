@@ -18,7 +18,7 @@ PACKAGE_CONTENTS ?= ${APP_NAME} ${ARCHIVE_FILES}
 all: set_debug_vars dep ${APP_NAME}
 
 set_debug_vars:
-	${eval DEBUG = -g3 -DLOG_LEVEL=1}
+	${eval DEBUG = -g3 -DLOG_LEVEL=1 -fsanitize=address -fsanitize=undefined}
 
 set_info_vars:
 	${eval DEBUG = -g3 -DLOG_LEVEL=2}
@@ -33,9 +33,15 @@ ${APP_NAME}: %: ${SRC_PATH}/%.o ${COMP_O} ${UTILS_O}
 
 static_library: dep ${ARCHIVE_FILES}
 
-${ARCHIVE_FILES}: set_pie ${DEP_PACKAGE_PATHS} ${COMP_O} ${UTILS_O}
+/tmp/${APP_NAME}_objs:
+	${Q}mkdir -p $@
+	${Q}cp ${SYSTEM_DEP_ARCHIVES} $@
+
+${ARCHIVE_FILES}: set_pie /tmp/${APP_NAME}_objs ${DEP_PACKAGE_PATHS} ${COMP_O} ${UTILS_O}
 	${call print,${BROWN}AR $@}
+	${eval DEP_PACKAGE_PATHS = ${DEP_PACKAGE_PATHS} /tmp/${APP_NAME}_objs}
 	${eval DEP_ARCHIVES = ${shell find ${DEP_PACKAGE_PATHS} -name '*.a'}}
+	${Q}echo ${DEP_ARCHIVES}
 	${Q}for arch in ${DEP_ARCHIVES} ; do \
 		ar x $$arch --output `dirname $$arch` ; \
 	done
@@ -128,6 +134,7 @@ ${LIB_PATH}/%.h:
 
 set_prod_vars:
 	${eval CFLAGS = ${PROD_CFLAGS} ${CFLAGS}}
+	${eval LDFLAGS = ${PROD_LDFLAGS} ${LDFLAGS}}
 
 prod: set_prod_vars dep ${APP_NAME}
 

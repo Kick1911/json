@@ -1,16 +1,10 @@
 #ifndef _UTILS_PARSER_UTILS_H
 #define _UTILS_PARSER_UTILS_H
 
-#include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 
 #include <utils/stack.h>
-
-typedef struct{
-    char* start;
-    char* end;
-} substring_t;
 
 static char* end_of_string(const char* s){
     const char* p = s;
