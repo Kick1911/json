@@ -91,7 +91,7 @@ int
 json_set(json_t* j, const char* key, json_value_t* v, json_value_t**);
 
 int
-json_set_num(json_t* j, const uint64_t key, json_value_t* v, json_value_t**);
+json_set_num(json_t* j, const int64_t key, json_value_t* v, json_value_t**);
 
 int
 json_arr_append(json_t* j, json_value_t* v);
@@ -103,13 +103,13 @@ json_value_t*
 json_get(json_t* j, const char* key);
 
 json_value_t*
-json_get_num(json_t* j, const uint64_t key);
+json_get_num(json_t* j, const int64_t key);
 
 json_value_t*
 json_delete(json_t* j, const char* key);
 
 json_value_t*
-json_delete_num(json_t* j, const uint64_t key);
+json_delete_num(json_t* j, const int64_t key);
 
 void*
 json_iter(const json_t*, const char*, size_t);

@@ -61,7 +61,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             substring_t* arr;
             json_type_t r;
             size_t arr_len = 0;
-            size_t i;
+            int64_t i;
             char* e;
 
             e = other_end(s, "[]");
@@ -76,7 +76,7 @@ json_value_parse(const char* s, const char** end, void** value) {
             if ( json_init(json_arr, JSON_ARRAY) )
                 return JSON_MEMORY_ALLOC_ERROR;
 
-            i = 0; while ( i < arr_len ) {
+            i = 0; while ( (size_t)i < arr_len ) {
                 void* _value = NULL;
                 r = json_value_parse(arr[i].start, NULL, &_value);
                 switch (r) {

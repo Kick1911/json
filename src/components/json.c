@@ -143,14 +143,14 @@ json_set(json_t* j, const char* key, json_value_t* v, json_value_t** remainder) 
 }
 
 int
-json_set_num(json_t* j, const uint64_t key, json_value_t* v, json_value_t** remainder) {
+json_set_num(json_t* j, const int64_t key, json_value_t* v, json_value_t** remainder) {
     return p_insert_num(j->hash_table, key, v, (void**)remainder);
 }
 
 int
 json_arr_append(json_t* j, json_value_t* v) {
     assert(j->type == JSON_ARRAY);
-    return p_insert_num(j->hash_table, json_size(j), v, NULL);
+    return p_insert_num(j->hash_table, (int64_t)json_size(j), v, NULL);
 }
 
 json_value_t*
@@ -168,7 +168,7 @@ json_get(json_t* j, const char* key) {
 }
 
 json_value_t*
-json_get_num(json_t* j, const uint64_t key) {
+json_get_num(json_t* j, const int64_t key) {
     return p_lookup_num(j->hash_table, key);
 }
 
@@ -187,7 +187,7 @@ json_delete(json_t* j, const char* key) {
 }
 
 json_value_t*
-json_delete_num(json_t* j, const uint64_t key) {
+json_delete_num(json_t* j, const int64_t key) {
     return p_delete_num(j->hash_table, key);
 }
 
@@ -197,7 +197,7 @@ json_arr_pop(json_t* j) {
 
     if (json_size(j) < 1)
         return NULL;
-    return json_delete_num(j, json_size(j) - 1);
+    return json_delete_num(j, (int64_t)(json_size(j) - 1));
 }
 
 size_t
